@@ -3,6 +3,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bash deploy/sauvegarder.sh
+if [ ! -d .git ]; then
+  echo "Ce dossier n'est pas relié au dépôt GitHub (copie sans git) : la mise à jour automatique est impossible."
+  echo "Pour le relier, sans toucher à la base ni au .env :"
+  echo "  git init -q && git remote add origin https://github.com/forma-st/forma-prospection.git && git fetch -q origin main && git checkout -f -B main origin/main"
+  echo "puis :  bash deploy/installer.sh --demarrage-auto"
+  exit 1
+fi
 git pull --ff-only
 .venv/bin/pip install -q -r requirements.txt
 .venv/bin/python manage.py migrate --noinput
