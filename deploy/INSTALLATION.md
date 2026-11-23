@@ -21,10 +21,10 @@ sudo apt install python3 python3-venv git
 **Sur Mac, n'installez pas l'outil dans Documents, Bureau, Téléchargements ou iCloud** : macOS interdit au démarrage automatique d'y accéder (« Operation not permitted »). Utilisez votre dossier personnel, par exemple `~/outil-prospection`.
 
 ```bash
-git clone https://github.com/forma-st/form-prospection.git ~/outil-prospection && cd ~/outil-prospection
+git clone https://github.com/forma-st/forma-prospection.git ~/outil-prospection && cd ~/outil-prospection
 ```
 
-L'adresse du dépôt est à adapter tant que l'outil n'a pas son dépôt définitif (voir le README).
+Le dépôt est privé : connectez-vous d'abord à GitHub (GitHub Desktop, ou `gh auth login`).
 
 ## 3. Installer
 

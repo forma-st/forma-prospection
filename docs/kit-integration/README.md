@@ -28,7 +28,7 @@ Version du 20/11/2026, cahier des charges v0.6. Tout ce qu'il faut pour dévelop
 
 ## Code de référence
 
-Une première version fonctionnelle (P1 + option LinkedIn) existe dans le dépôt `forma-st/FORM-AO`, dossier `prospection/` (application Django, avec ses tests). L'autre session Claude Code peut s'en inspirer ou la reprendre : modèles, calcul du score et du besoin, import, annuaire, rédaction, contrôle avant envoi, connexion LinkedIn (OAuth) et publication.
+Une première version fonctionnelle (P1 + option LinkedIn) existe dans le dépôt `forma-st/forma-prospection`, dossier `prospection/` (application Django, avec ses tests). L'autre session Claude Code peut s'en inspirer ou la reprendre : modèles, calcul du score et du besoin, import, annuaire, rédaction, contrôle avant envoi, connexion LinkedIn (OAuth) et publication.
 
 ## Périmètre en une phrase
 
@@ -38,4 +38,4 @@ Outil interne et propriétaire qui trouve les entreprises ayant un besoin réel 
 
 Voir le cahier des charges §11 : technologie et API du CRM, emplacement final de l'agent, bases fournies, historique existant, segments prioritaires, budget d'enrichissement, validation juridique.
 
-Source : dépôt `forma-st/FORM-AO`, branche `claude/focused-hamilton-9ee51e`, dossier `export/agent-prospection/`.
+Source : dépôt `forma-st/forma-prospection`, dossier `docs/kit-integration/`.
