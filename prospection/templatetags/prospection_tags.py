@@ -57,6 +57,7 @@ ICONES = {
     "messagerie": '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
     "linkedin": '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 10.5v6M8 7.5v.01M12 16.5v-3.5a2.5 2.5 0 0 1 5 0v3.5M12 10.5v6"/>',
     "opposition": '<path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2 2 4-4"/>',
+    "couts": '<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.6a4.2 4.2 0 1 0 0 6.8M7 10.8h6.5M7 13.2h6.5"/>',
     "parametres": '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
     "catalogue": '<path d="M5 4h11l3 3v13H5z"/><path d="M9 10h6M9 14h6"/>',
     "utilisateurs": '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.5 3.6-5.5 7-5.5s6.2 2 7 5.5"/>',
@@ -93,3 +94,20 @@ def split_pairs(s):
 @register.filter
 def active_ce_mois(r):
     return r.active_ce_mois()
+
+
+@register.filter
+def euros(v, decimales=2):
+    """Montant en euros avec virgule décimale : 12,34 €."""
+    try:
+        return f"{float(v):,.{int(decimales)}f} €".replace(",", " ").replace(".", ",")
+    except (TypeError, ValueError):
+        return "—"
+
+
+@register.filter
+def milliers(v):
+    try:
+        return f"{int(v):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return v

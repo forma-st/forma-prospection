@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (ActionLinkedIn, Activite, BoiteEnvoi, Compte, ConnexionLinkedIn, Contact, EtapeSequence, HistoriqueFormation, ImportFichier,
+from .models import (ActionLinkedIn, Activite, AppelIA, BoiteEnvoi, Compte, ConnexionLinkedIn, Contact, EtapeSequence, HistoriqueFormation, ImportFichier,
                      Inscription, Message, Opposition, Parametres, Prestation, ProfilEntreprise, PublicationLinkedIn, Sequence, Signal, Tache)
 from .services.scoring import recalculer_tout
 
@@ -16,6 +16,8 @@ class ParametresAdmin(admin.ModelAdmin):
         ("Score", {"fields": ["poids_adequation", "poids_intention", "poids_accessibilite", "seuil_palier_a", "seuil_palier_b",
                               "part_sst", "departements_prioritaires", "objectif_actions_jour"]}),
         ("Messagerie", {"fields": ["mode_test", "adresse_test", "plages_envoi"]}),
+        ("Coûts IA", {"fields": ["budget_ia_mensuel", "bloquer_ia_au_budget", "taux_usd_eur"],
+                      "description": "Suivi et simulateur dans le menu « Coûts IA »."}),
         ("Option LinkedIn", {"fields": ["linkedin_actif", "linkedin_invitations_semaine", "linkedin_profils_jour"],
                              "description": "Connexion du compte et publication par l'API officielle ; invitations et messages "
                                             "toujours envoyés à la main. Renseignez aussi LINKEDIN_CLIENT_ID et LINKEDIN_CLIENT_SECRET dans le .env."}),
@@ -127,3 +129,16 @@ class MessageAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Inscription)
+
+
+@admin.register(AppelIA)
+class AppelIAAdmin(admin.ModelAdmin):
+    list_display = ["cree_le", "usage", "modele", "tokens_entree", "tokens_cache_lus", "tokens_sortie", "cout_usd", "compte", "utilisateur"]
+    list_filter = ["usage", "modele"]
+    date_hierarchy = "cree_le"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

@@ -117,3 +117,6 @@ details summary{cursor:pointer;color:var(--info);font-size:13px} form.inline{dis
   .hide-m,.search kbd{display:none} .topbar{flex-wrap:wrap} .topbar .search{max-width:none;flex:1 1 100%} .topbar .row{flex-wrap:wrap!important} .nba{grid-template-columns:34px minmax(0,1fr)} .nba .acts{grid-column:1 / -1;justify-content:flex-start}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.prog.warn i{background:var(--warn)} .prog.bad i{background:var(--bad)}
+.sim input[type=number]{width:96px;text-align:right} .sim td.n,.sim th.n{text-align:right;white-space:nowrap}
+.sim tr.choisi td{font-weight:600}

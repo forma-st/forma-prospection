@@ -30,6 +30,7 @@
     {% if linkedin_actif %}<a href="{% url 'prospection:linkedin' %}" class="{% if n == 'linkedin' %}on{% endif %}"><span class="lbl">{% icone 'linkedin' %}<span>LinkedIn</span></span></a>{% endif %}
     <div class="grp">Réglages</div>
     <a href="{% url 'prospection:oppositions' %}" class="{% if n == 'oppositions' %}on{% endif %}"><span class="lbl">{% icone 'opposition' %}<span>Opposition (RGPD)</span></span></a>
+    <a href="{% url 'prospection:couts_ia' %}" class="{% if n == 'couts_ia' %}on{% endif %}"><span class="lbl">{% icone 'couts' %}<span>Coûts IA</span></span></a>
     {% if user.is_staff %}<a href="{% url 'admin:prospection_parametres_change' 1 %}"><span class="lbl">{% icone 'parametres' %}<span>Paramètres</span></span></a>
     <a href="{% url 'admin:prospection_prestation_changelist' %}"><span class="lbl">{% icone 'catalogue' %}<span>Catalogue et profil</span></span></a>
     <a href="{% url 'admin:auth_user_changelist' %}"><span class="lbl">{% icone 'utilisateurs' %}<span>Utilisateurs</span></span></a>{% endif %}

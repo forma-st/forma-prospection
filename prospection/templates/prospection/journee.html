@@ -25,6 +25,11 @@
       {% if bilan.crees %}<a class="btn sm sec" href="{% url 'prospection:prospects' %}?vue=auto" style="margin-top:8px">Voir les prospects trouvés</a>{% endif %}
       {% else %}<p class="small muted" style="margin:0">Rien depuis 24 h. Les recherches tournent chaque matin à 7 h 40 ; vous pouvez aussi en lancer une depuis <a href="{% url 'prospection:recherches' %}">Recherche automatique</a>.</p>{% endif %}
       {% if bilan.erreurs %}<p class="small" style="color:var(--warn);margin:6px 0 0">{{ bilan.erreurs|length }} source{{ bilan.erreurs|length|pluralize }} en erreur : voir le journal.</p>{% endif %}</div>
+    {% if couts %}<div class="card"><div class="row between"><h2>Coûts IA du mois</h2><b>{{ couts.eur|euros }} / {{ couts.budget|euros:0 }}</b></div>
+      <div class="prog {% if couts.etat == 'depasse' %}bad{% elif couts.etat == 'proche' %}warn{% endif %}" style="margin-top:8px"><i style="width:{% if couts.pct > 100 %}100{% else %}{{ couts.pct }}{% endif %}%"></i></div>
+      {% if couts.etat == 'depasse' %}<p class="small" style="color:var(--bad);margin:8px 0 0">Budget atteint{% if couts.bloque %} : l'IA est suspendue jusqu'au mois prochain{% endif %}. <a href="{% url 'prospection:couts_ia' %}">Voir le détail</a></p>
+      {% elif couts.etat == 'proche' %}<p class="small" style="color:var(--warn);margin:8px 0 0">Plus de 80 % du budget consommé (projection {{ couts.projection|euros }}). <a href="{% url 'prospection:couts_ia' %}">Voir le détail</a></p>
+      {% else %}<p class="small muted" style="margin:8px 0 0">{{ couts.nb }} appel{{ couts.nb|pluralize }} ce mois-ci, projection {{ couts.projection|euros }}. <a href="{% url 'prospection:couts_ia' %}">Simuler</a></p>{% endif %}</div>{% endif %}
     <div class="card"><h2>Ce mois-ci : {{ saison.0|lower }}</h2><p class="small" style="margin:0">{{ saison.1 }}</p></div>
     <div class="card"><h2>Signaux récents</h2><div class="list">
       {% for s in signaux %}<div class="li"><span class="dot info"></span><div class="grow small"><a href="{% url 'prospection:compte' s.compte_id %}"><b>{{ s.compte.nom }}</b></a> · {{ s.type|signal_libelle }}<br><span class="muted">{{ s.texte }} · {{ s.source }} · {{ s.date_signal|date:"d/m/Y" }}</span></div><span class="tier {{ s.compte.palier }}">{{ s.compte.palier }}</span></div>

@@ -49,7 +49,7 @@ Le script installe les dépendances, crée le fichier `.env`, prépare la base (
 
 | Réglage | Effet |
 |---|---|
-| `ANTHROPIC_API_KEY=sk-ant-…` | Bouton « Améliorer avec l'IA ». Sans clé, les modèles intégrés suffisent |
+| `ANTHROPIC_API_KEY=sk-ant-…` | Bouton « Améliorer avec l'IA ». Sans clé, les modèles intégrés suffisent. Coût suivi dans le menu *Coûts IA* (budget mensuel, simulateur) |
 | `FORMAO_URL=http://localhost:8000` et `FORMAO_JETON=…` | Lien avec FORM'AO : import des acheteurs publics, reprise du profil et du catalogue. FORM'AO doit exposer l'API décrite dans `docs/API_FORMAO.md` |
 | `FRANCETRAVAIL_CLIENT_ID`, `FRANCETRAVAIL_CLIENT_SECRET` | Recherche automatique dans les offres d'emploi : recrutements QSE / HSE et recrutements en nombre. Voir ci-dessous |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | Option LinkedIn (à activer aussi dans *Paramètres*). URL de redirection à déclarer : `http://localhost:8010/prospection/linkedin/retour/`, connexion à faire depuis l'ordinateur qui héberge l'outil |
@@ -116,3 +116,17 @@ cd ~/outil-prospection && .venv/bin/python manage.py loaddata ~/prospection-expo
 - Joignable seulement quand l'ordinateur est allumé et réveillé (désactivez la mise en veille automatique).
 - Accès en `http` sur le réseau du bureau : ne l'ouvrez pas sur Internet. Pour un accès extérieur, il faudra un serveur en HTTPS.
 - Base SQLite : adaptée à quelques utilisateurs.
+
+
+## France Travail : la connexion est refusée (400)
+
+Le message affiché donne la cause renvoyée par France Travail :
+
+- **invalid_client** : identifiant ou clé secrète erronés. Recopiez-les depuis *Mes applications* sur francetravail.io, sans espace ni guillemet, ou régénérez la clé secrète.
+- **invalid_scope** : l'application n'a pas accès à l'API « Offres d'emploi v2 ». Ouvrez l'application dans *Mes applications* et regardez la liste de ses API. Le catalogue « Ajouter » ne montre que les API **pas encore** ajoutées : si « Offres d'emploi » n'y figure pas, elle est sans doute déjà rattachée.
+
+Après avoir corrigé le `.env`, relancez l'outil (`bash deploy/mettre_a_jour.sh` le fait), puis cliquez sur *Lancer* devant une recherche France Travail.
+
+## Coûts IA
+
+Le menu *Réglages > Coûts IA* affiche la dépense du mois (estimée d'après les jetons consommés), la projection de fin de mois et le budget. Une alerte apparaît dans *Ma journée* à partir de 80 % du budget. Par défaut, l'IA est suspendue une fois le budget atteint : les modèles intégrés prennent le relais. Le simulateur estime le coût mensuel selon les volumes prévus et compare les modèles. Les tarifs sont dans `prospection/services/couts_ia.py`. La facture Anthropic fait foi.

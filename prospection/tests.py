@@ -684,3 +684,134 @@ class FranceTravail(TestCase):
             u = User.objects.create_user("julie", password="x", is_staff=True)
             self.client.force_login(u)
             self.assertContains(self.client.get("/prospection/recherche-automatique/"), "identifiants à renseigner")
+
+
+class FranceTravailErreurs(TestCase):
+    def setUp(self):
+        ft._cache.clear()
+
+    def _refus(self, corps):
+        class H:
+            def post(self, url, **kw):
+                H.data = kw["data"]
+                return SimpleNamespace(status_code=400, json=lambda: corps, text=str(corps))
+        return H
+
+    def test_cause_exacte_et_identifiants_nettoyes(self):
+        H = self._refus({"error": "invalid_scope", "error_description": "Invalid scope"})
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": ' "PAR_forma_123" ', "FRANCETRAVAIL_CLIENT_SECRET": "secret\n"}):
+            with self.assertRaises(ft.FranceTravailIndisponible) as e:
+                ft.jeton(H())
+        self.assertIn("invalid_scope", str(e.exception))
+        self.assertIn("Offres d'emploi v2", str(e.exception))
+        self.assertEqual((H.data["client_id"], H.data["client_secret"]), ("PAR_forma_123", "secret"))
+        H = self._refus({"error": "invalid_client"})
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "a", "FRANCETRAVAIL_CLIENT_SECRET": "b"}):
+            with self.assertRaises(ft.FranceTravailIndisponible) as e:
+                ft.jeton(H())
+        self.assertIn("régénérez", str(e.exception))
+
+
+# ------------------------------------------------------------------ Coûts IA
+
+from decimal import Decimal  # noqa: E402
+
+from .models import AppelIA  # noqa: E402
+from .services import couts_ia  # noqa: E402
+
+
+class FauxClaude:
+    """Client Claude factice : renvoie une réponse structurée avec son usage."""
+
+    def __init__(self, modele="claude-opus-5-5"):
+        self.appels = 0
+        rep = SimpleNamespace(
+            model=modele, stop_reason="end_turn",
+            usage=SimpleNamespace(input_tokens=1000, output_tokens=500, cache_creation_input_tokens=0, cache_read_input_tokens=2000),
+            parsed_output=redaction.MessageIA(objet="Formation sécurité", texte="Bonjour Madame Vasseur, [À COMPLÉTER : date].", champs_a_completer=[]))
+        faux = self
+
+        class Messages:
+            def parse(self, **kw):
+                faux.appels += 1
+                return rep
+        self.beta = SimpleNamespace(messages=Messages())
+
+
+class CoutsIA(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user("julie", password="x", is_staff=True, is_superuser=True)
+        self.client.force_login(self.u)
+
+    def test_calcul_du_cout(self):
+        # 1 000 jetons d'entrée à 4 $ + 500 de sortie à 20 $ + 2 000 lus en cache à 0,20 $ = 0,0144 $
+        self.assertAlmostEqual(couts_ia.cout_usd("claude-opus-5-5", 1000, 500, 0, 2000), 0.0144)
+        self.assertAlmostEqual(couts_ia.cout_usd("claude-sonnet-5-5", 0, 0, 1000, 0), 0.0025)  # écriture cache 1,25 ×
+        self.assertTrue(couts_ia.tarif("claude-haiku-5-5")[4])
+        self.assertFalse(couts_ia.tarif("modele-inconnu")[4])  # compté au tarif par défaut
+
+    def test_redaction_ia_enregistre_la_consommation(self):
+        c = vexin()
+        faux = FauxClaude()
+        m = redaction.rediger_ia(c, c.contact_principal(), "email", "direct", "", client=faux, utilisateur=self.u)
+        self.assertIn("ne plus recevoir", m["texte"])
+        a = AppelIA.objects.get()
+        self.assertEqual((a.usage, a.compte, a.utilisateur, a.tokens_cache_lus), ("redaction", c, self.u, 2000))
+        self.assertEqual(a.cout_usd, Decimal("0.014400"))
+        mois = couts_ia.mois_en_cours()
+        self.assertEqual(mois["nb"], 1)
+        self.assertAlmostEqual(mois["eur"], 0.0144 * 0.86, places=5)
+
+    def test_budget_atteint_suspend_l_ia(self):
+        c = vexin()
+        p = Parametres.get()
+        p.budget_ia_mensuel = 1
+        p.save()
+        AppelIA.objects.create(usage="redaction", modele="claude-opus-5-5", cout_usd=Decimal("2"))
+        self.assertTrue(couts_ia.budget_atteint())
+        faux = FauxClaude()
+        with self.assertRaises(redaction.BudgetIAAtteint):
+            redaction.rediger_ia(c, None, "email", "direct", "", client=faux)
+        self.assertEqual(faux.appels, 0)
+        p.bloquer_ia_au_budget = False
+        p.save()
+        self.assertFalse(couts_ia.budget_atteint())
+        self.assertEqual(couts_ia.mois_en_cours()["etat"], "depasse")
+
+    def test_mois_precedent_non_compte(self):
+        a = AppelIA.objects.create(usage="redaction", modele="claude-opus-5-5", cout_usd=Decimal("5"))
+        AppelIA.objects.filter(pk=a.pk).update(cree_le=timezone.now() - timedelta(days=40))
+        self.assertEqual(couts_ia.mois_en_cours()["nb"], 0)
+
+    def test_simulateur(self):
+        lignes = [{"cle": "redaction", "libelle": "x", "volume": 100, "entree": 2500, "sortie": 800}]
+        s = couts_ia.simuler(lignes, "claude-opus-5-5", 1.0, prospects=50, budget=10)
+        self.assertAlmostEqual(s["mensuel_eur"], 100 * (2500 * 4 + 800 * 20) / 1e6)  # 2,60 €
+        self.assertAlmostEqual(s["par_prospect"], s["mensuel_eur"] / 50)
+        self.assertEqual(s["pct_budget"], 26)
+        haiku = next(x for x in s["comparaison"] if x["modele"] == "claude-haiku-5-5")
+        self.assertLess(haiku["mensuel_eur"], s["mensuel_eur"])
+
+    def test_moyennes_observees(self):
+        for _ in range(3):
+            AppelIA.objects.create(usage="redaction", modele="claude-opus-5-5", tokens_entree=100, tokens_cache_lus=1900, tokens_sortie=600)
+        self.assertEqual(couts_ia.moyennes()["redaction"], {"nb": 3, "entree": 2000, "sortie": 600})
+
+    def test_pages(self):
+        AppelIA.objects.create(usage="redaction", modele="claude-opus-5-5", cout_usd=Decimal("0.02"), compte=vexin())
+        r = self.client.get("/prospection/couts-ia/?modele=claude-sonnet-5-5&v_redaction=300&prospects=0")
+        self.assertContains(r, "Simulateur")
+        self.assertContains(r, "Sonnet 5.5")
+        self.assertContains(r, 'value="300"')
+        self.assertEqual(r.context["sim"]["par_prospect"], None)
+        with mock.patch.object(redaction, "ia_disponible", return_value=True):
+            self.assertContains(self.client.get("/prospection/"), "Coûts IA du mois")
+        r = self.client.post("/prospection/couts-ia/", {"budget": "50", "taux": "0,9"})
+        self.assertRedirects(r, "/prospection/couts-ia/")
+        p = Parametres.get()
+        self.assertEqual((p.budget_ia_mensuel, p.taux_usd_eur, p.bloquer_ia_au_budget), (50, Decimal("0.900"), False))
+
+    def test_budget_reserve_aux_administrateurs(self):
+        self.client.force_login(User.objects.create_user("paul", password="x"))
+        self.assertEqual(self.client.get("/prospection/couts-ia/").status_code, 200)
+        self.assertEqual(self.client.post("/prospection/couts-ia/", {"budget": "999"}).status_code, 404)

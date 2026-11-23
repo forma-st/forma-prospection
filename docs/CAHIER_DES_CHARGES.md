@@ -278,7 +278,7 @@ Fonctionnement : l'IA dispose d'**outils** (recherche de prospects, lecture de f
 - Rendement de chaque source : coût (enrichissement + IA) par RDV obtenu.
 - Pipeline transmis au CRM et CA gagné issu de l'agent.
 - Délivrabilité : rebonds, plaintes, oppositions, réputation des boîtes.
-- Coût IA du mois.
+- Coût IA du mois (livré : menu *Coûts IA*, avec budget mensuel, suspension au budget et simulateur).
 - Échéances à venir : MAC SST clients, marchés publics à renouveler.
 
 ### 3.13 Conformité : RGPD, CNIL, délivrabilité

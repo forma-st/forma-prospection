@@ -23,8 +23,30 @@ class FranceTravailIndisponible(Exception):
     pass
 
 
+def _env(nom: str) -> str:
+    """Valeur du .env sans espaces ni guillemets parasites (copier-coller depuis le site)."""
+    return os.environ.get(nom, "").strip().strip("\"'").strip()
+
+
 def configure() -> bool:
-    return bool(os.environ.get("FRANCETRAVAIL_CLIENT_ID") and os.environ.get("FRANCETRAVAIL_CLIENT_SECRET"))
+    return bool(_env("FRANCETRAVAIL_CLIENT_ID") and _env("FRANCETRAVAIL_CLIENT_SECRET"))
+
+
+def _cause(r) -> str:
+    try:
+        d = r.json()
+        code, detail = d.get("error", ""), d.get("error_description", "")
+    except ValueError:
+        code, detail = "", r.text[:200]
+    if code == "invalid_client":
+        conseil = ("identifiant ou clé secrète refusés : recopiez-les depuis « Mes applications » sur francetravail.io "
+                   "(sans espace ni guillemet), ou régénérez la clé secrète")
+    elif code == "invalid_scope":
+        conseil = ("l'application n'a pas accès à l'API « Offres d'emploi v2 » : dans « Mes applications », ouvrez votre application "
+                   "et vérifiez qu'elle figure dans ses API ; sinon ajoutez-la depuis le catalogue (rubrique Offres d'emploi)")
+    else:
+        conseil = "vérifiez les identifiants et l'abonnement à l'API « Offres d'emploi v2 »"
+    return f"France Travail refuse la connexion ({r.status_code}{', ' + code if code else ''}) : {conseil}." + (f" Détail : {detail}" if detail else "")
 
 
 def jeton(client: httpx.Client | None = None) -> str:
@@ -34,11 +56,11 @@ def jeton(client: httpx.Client | None = None) -> str:
         raise FranceTravailIndisponible("Identifiants France Travail absents : renseignez FRANCETRAVAIL_CLIENT_ID et FRANCETRAVAIL_CLIENT_SECRET dans le .env.")
     h = client or httpx.Client(timeout=30)
     r = h.post(JETON_URL, params={"realm": "/partenaire"}, data={
-        "grant_type": "client_credentials", "client_id": os.environ["FRANCETRAVAIL_CLIENT_ID"],
-        "client_secret": os.environ["FRANCETRAVAIL_CLIENT_SECRET"], "scope": PORTEE,
+        "grant_type": "client_credentials", "client_id": _env("FRANCETRAVAIL_CLIENT_ID"),
+        "client_secret": _env("FRANCETRAVAIL_CLIENT_SECRET"), "scope": PORTEE,
     })
     if r.status_code != 200:
-        raise FranceTravailIndisponible(f"France Travail refuse les identifiants ({r.status_code}) : vérifiez-les et l'abonnement à l'API « Offres d'emploi v2 ».")
+        raise FranceTravailIndisponible(_cause(r))
     d = r.json()
     _cache.update(jeton=d["access_token"], expire=time.time() + int(d.get("expires_in", 1499)))
     return _cache["jeton"]

@@ -1,0 +1,67 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}Coûts IA{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Coûts IA</h1><div class="sub">Ce que coûte l'IA ce mois-ci, le budget fixé, et une simulation selon l'usage prévu. L'IA reste facultative : sans elle, les modèles intégrés rédigent les messages.</div></div></div>
+{% if not ia_dispo %}<div class="confirm small"><b>L'IA n'est pas activée.</b> Renseignez <code>ANTHROPIC_API_KEY</code> dans le fichier <code>.env</code> puis redémarrez. Le simulateur ci-dessous fonctionne quand même, pour décider avant d'activer.</div>{% endif %}
+<div class="kpis">
+  <div class="kpi"><span class="l">Dépensé ce mois-ci</span><span class="v">{{ mois.eur|euros }}</span><span class="small muted">{{ mois.nb }} appel{{ mois.nb|pluralize }}{% if mois.nb %}, {{ mois.moyen|euros:3 }} en moyenne{% endif %}</span></div>
+  <div class="kpi"><span class="l">Projection fin de mois</span><span class="v">{{ mois.projection|euros }}</span><span class="small muted">au rythme actuel</span></div>
+  <div class="kpi"><span class="l">Budget mensuel</span><span class="v">{{ mois.budget|euros:0 }}</span><span class="small muted">{% if mois.bloque %}IA suspendue au-delà{% else %}alerte seulement{% endif %}</span></div>
+  <div class="kpi"><span class="l">Budget consommé</span><span class="v">{{ mois.pct }} %</span><div class="prog {% if mois.etat == 'depasse' %}bad{% elif mois.etat == 'proche' %}warn{% endif %}" style="margin-top:4px"><i style="width:{% if mois.pct > 100 %}100{% else %}{{ mois.pct }}{% endif %}%"></i></div></div>
+</div>
+{% if mois.etat == 'depasse' %}<div class="confirm small"><b>Budget atteint.</b> {% if mois.bloque %}L'IA est suspendue jusqu'au 1er du mois prochain ; les modèles intégrés prennent le relais.{% else %}L'IA continue de fonctionner (suspension désactivée).{% endif %}</div>
+{% elif mois.etat == 'proche' %}<div class="confirm small"><b>Plus de 80 % du budget est consommé.</b> Projection : {{ mois.projection|euros }} pour un budget de {{ mois.budget|euros:0 }}.</div>{% endif %}
+
+<div class="grid g2e" style="margin-top:16px">
+  <div class="card"><h2>Ce mois-ci, par usage</h2>
+    {% if mois.par_usage %}<div class="tw"><table class="sim"><thead><tr><th>Usage</th><th class="n">Appels</th><th class="n">Coût</th></tr></thead><tbody>
+    {% for u in mois.par_usage %}<tr><td>{{ u.usage }}</td><td class="n">{{ u.nb }}</td><td class="n">{{ u.eur|euros }}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="small muted">Aucun appel à l'IA ce mois-ci.</p>{% endif %}
+    <p class="small muted" style="margin:8px 0 0">Modèle utilisé : <b>{{ libelle_actuel }}</b> (réglage <code>CLAUDE_MODEL</code> du .env). Montants estimés d'après les jetons consommés ; la facture fait foi (console Anthropic, en dollars).</p></div>
+  <div class="card"><h2>Budget</h2>
+    {% if user.is_staff %}<form method="post" class="grid" style="gap:8px">{% csrf_token %}
+      <div class="row"><label class="f">Budget mensuel (€)<input type="number" name="budget" value="{{ parametres.budget_ia_mensuel }}" min="0" style="width:120px"></label>
+      <label class="f">1 $ = … €<input type="text" name="taux" value="{{ parametres.taux_usd_eur }}" inputmode="decimal" style="width:90px"></label></div>
+      <label class="small"><input type="checkbox" name="bloquer" value="1" {% if parametres.bloquer_ia_au_budget %}checked{% endif %}> Suspendre l'IA une fois le budget atteint</label>
+      <button class="btn sm" style="justify-self:start">Enregistrer</button></form>
+    {% else %}<p class="small">Budget de {{ mois.budget|euros:0 }} par mois. Seul un administrateur peut le modifier.</p>{% endif %}
+    <p class="small muted" style="margin:8px 0 0">Une alerte apparaît dans « Ma journée » à partir de 80 % du budget.</p></div>
+</div>
+
+<form method="get" action="#simulateur" class="card" id="simulateur" style="margin-top:16px">
+  <div class="row between"><h2>Simulateur</h2>
+    <div class="row"><label class="f">Modèle<select name="modele">{% for k, l, e, s in modeles %}<option value="{{ k }}" {% if k == modele %}selected{% endif %}>{{ l }} · {{ e }} $ / {{ s }} $</option>{% endfor %}</select></label>
+    <label class="f">Prospects contactés / mois<input type="number" name="prospects" value="{{ prospects }}" min="0" style="width:110px"></label></div></div>
+  <p class="small muted" style="margin:4px 0 8px">Indiquez le volume mensuel de chaque tâche. Les jetons par appel sont pré-remplis avec la moyenne réellement observée quand elle existe (<span class="chip ok">mesuré</span>), sinon avec une estimation. Prix en dollars par million de jetons (entrée / sortie).</p>
+  <div class="tw"><table class="sim"><thead><tr><th>Tâche</th><th class="n">Appels / mois</th><th class="n hide-m">Jetons entrée</th><th class="n hide-m">Jetons sortie</th><th class="n hide-m">Par appel</th><th class="n">Par mois</th></tr></thead><tbody>
+  {% for l in sim.lignes %}<tr><td><b>{{ l.libelle }}</b>{% if l.observe %} <span class="chip ok" title="moyenne de {{ l.observe.nb }} appels sur 90 jours">mesuré</span>{% endif %}<div class="small muted">{{ l.aide }}</div></td>
+    <td class="n"><input type="number" name="v_{{ l.cle }}" value="{{ l.volume }}" min="0"></td>
+    <td class="n hide-m"><input type="number" name="e_{{ l.cle }}" value="{{ l.entree }}" min="0"></td>
+    <td class="n hide-m"><input type="number" name="s_{{ l.cle }}" value="{{ l.sortie }}" min="0"></td>
+    <td class="n hide-m">{{ l.unitaire_eur|euros:3 }}</td><td class="n">{{ l.mensuel_eur|euros }}</td></tr>{% endfor %}
+  <tr class="choisi"><td>Total ({{ sim.appels|milliers }} appels)</td><td></td><td class="hide-m"></td><td class="hide-m"></td><td class="hide-m"></td><td class="n">{{ sim.mensuel_eur|euros }}</td></tr>
+  </tbody></table></div>
+  <div class="kpis" style="margin-top:12px">
+    <div class="kpi"><span class="l">Par mois</span><span class="v">{{ sim.mensuel_eur|euros }}</span><span class="small muted">{{ sim.usd|floatformat:2 }} $</span></div>
+    <div class="kpi"><span class="l">Par an</span><span class="v">{{ sim.annuel_eur|euros:0 }}</span></div>
+    <div class="kpi"><span class="l">Par prospect contacté</span><span class="v">{% if sim.par_prospect is not None %}{{ sim.par_prospect|euros:3 }}{% else %}—{% endif %}</span></div>
+    <div class="kpi"><span class="l">Part du budget</span><span class="v">{% if sim.pct_budget is not None %}{{ sim.pct_budget }} %{% else %}—{% endif %}</span><span class="small muted">budget de {{ mois.budget|euros:0 }}</span></div>
+  </div>
+  <h3 style="margin:16px 0 6px">Même usage, autre modèle</h3>
+  <div class="tw"><table class="sim"><thead><tr><th>Modèle</th><th class="n">Par mois</th><th class="n">Par an</th></tr></thead><tbody>
+  {% for c in sim.comparaison %}<tr class="{% if c.choisi %}choisi{% endif %}"><td>{{ c.libelle }}{% if c.choisi %} <span class="chip">simulé</span>{% endif %}{% if c.modele == modele_actuel %} <span class="chip ok">en service</span>{% endif %}</td><td class="n">{{ c.mensuel_eur|euros }}</td><td class="n">{{ c.annuel_eur|euros:0 }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="small muted" style="margin:8px 0 0">Un modèle moins cher peut suffire pour le classement des réponses ; pour la rédaction, comparez d'abord la qualité sur quelques fiches. Le changement se fait dans le .env (<code>CLAUDE_MODEL</code>). Taux appliqué : 1 $ = {{ taux }} €.</p>
+  <div class="row" style="margin-top:10px"><button class="btn sm">Recalculer</button><a class="btn sm ghost" href="{% url 'prospection:couts_ia' %}#simulateur">Valeurs par défaut</a></div>
+</form>
+
+<div class="card" style="margin-top:16px"><h2>Derniers appels</h2>
+  {% if derniers %}<div class="tw"><table class="sim"><thead><tr><th>Date</th><th>Usage</th><th class="hide-m">Prospect</th><th class="n hide-m">Entrée</th><th class="n hide-m">Cache</th><th class="n hide-m">Sortie</th><th class="n">Coût</th></tr></thead><tbody>
+  {% for a in derniers %}<tr><td class="small">{{ a.cree_le|date:"d/m H:i" }}</td><td class="small">{{ a.get_usage_display }}</td><td class="small hide-m">{% if a.compte %}<a href="{% url 'prospection:compte' a.compte_id %}">{{ a.compte.nom }}</a>{% else %}—{% endif %}</td>
+    <td class="n hide-m small">{{ a.tokens_entree|milliers }}</td><td class="n hide-m small">{{ a.tokens_cache_lus|add:a.tokens_cache_ecrits|milliers }}</td><td class="n hide-m small">{{ a.tokens_sortie|milliers }}</td><td class="n small">{{ a.cout_usd|floatformat:4 }} $</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="small muted">Aucun appel enregistré pour l'instant.</p>{% endif %}</div>
+<script>
+(function(){var f=document.getElementById('simulateur'),t;f.querySelector('select[name=modele]').addEventListener('change',function(){f.submit()});
+f.querySelectorAll('input[type=number]').forEach(function(i){i.addEventListener('change',function(){clearTimeout(t);t=setTimeout(function(){f.submit()},300)})})})();
+</script>
+{% endblock %}

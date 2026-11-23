@@ -12,7 +12,7 @@ Application **indépendante** de FORM'AO (suivi, veille et gestion des appels d'
   - vues enregistrées, et touches J / K pour passer d'une fiche à l'autre.
 - **Rédaction** :
   - e-mail, invitation LinkedIn, script d'appel et relance, avec ton et consigne ;
-  - « Améliorer avec l'IA » si une clé Anthropic est présente ;
+  - « Améliorer avec l'IA » si une clé Anthropic est présente, avec suivi des coûts, budget mensuel et simulateur (menu *Coûts IA*) ;
   - contrôle avant envoi noté sur 100, mention RGPD toujours ajoutée ;
   - l'envoi se fait depuis votre messagerie : « J'ai envoyé ce message » l'inscrit dans l'historique et planifie la relance.
 - **Recherche automatique** (phase 3) : chaque matin, l'outil cherche les entreprises de la cible et les présente « À qualifier » :
@@ -99,6 +99,7 @@ prospection/
     imports.py          lecture CSV / XLSX, correspondance, dédoublonnage, contrôles
     sirene.py           annuaire officiel des entreprises (API publique gratuite)
     redaction.py        modèles intégrés et IA (facultative)
+    couts_ia.py         coûts de l'IA : suivi, budget, simulateur
     qualite.py          contrôle avant envoi
     journee.py          « Ma journée »
     rgpd.py             opposition, mention d'information

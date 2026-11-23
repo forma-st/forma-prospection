@@ -193,10 +193,18 @@ def ia_disponible() -> bool:
     return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
 
 
-def rediger_ia(c: Compte, contact: Contact | None, canal: str, ton: str, consigne: str, client=None) -> dict:
+class BudgetIAAtteint(Exception):
+    pass
+
+
+def rediger_ia(c: Compte, contact: Contact | None, canal: str, ton: str, consigne: str, client=None, utilisateur=None) -> dict:
     import anthropic
 
     from ..models import ProfilEntreprise
+    from . import couts_ia
+
+    if couts_ia.budget_atteint():
+        raise BudgetIAAtteint("Budget IA du mois atteint : l'IA reprendra le mois prochain (ou relevez le budget dans « Coûts IA »).")
 
     base = generer(c, contact, canal, ton, consigne)
     donnees = (f"FICHE :\n{brief(c)}\n\nCONTACT : {contact.nom_complet + ', ' + contact.fonction if contact else 'inconnu'}\n"
@@ -212,6 +220,7 @@ def rediger_ia(c: Compte, contact: Contact | None, canal: str, ton: str, consign
         messages=[{"role": "user", "content": f"Améliore ce message en respectant les règles.\n\n{donnees}"}],
         output_format=MessageIA,
     )
+    couts_ia.enregistrer(rep, "redaction", c, utilisateur)
     if rep.parsed_output is None:
         raise RuntimeError(f"Réponse IA incomplète ({rep.stop_reason}).")
     m: MessageIA = rep.parsed_output

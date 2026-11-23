@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_envoi, views_recherche
+from . import views, views_couts, views_envoi, views_recherche
 
 app_name = "prospection"
 
@@ -29,6 +29,7 @@ urlpatterns = [
     path("reponses/", views_envoi.reponses_page, name="reponses"),
     path("statistiques/", views_envoi.statistiques, name="statistiques"),
     path("recherche-automatique/", views_recherche.recherches, name="recherches"),
+    path("couts-ia/", views_couts.couts, name="couts_ia"),
     path("linkedin/", views.linkedin_page, name="linkedin"),
     path("linkedin/connecter/", views.linkedin_connecter, name="linkedin_connecter"),
     path("linkedin/retour/", views.linkedin_retour, name="linkedin_retour"),

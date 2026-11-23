@@ -55,8 +55,11 @@ def journee(request):
     faites = svc_journee.faites_aujourd_hui(request.user)
     recents = Signal.objects.select_related("compte").filter(actif=True)[:6]
     from .services.recherche import bilan_nuit
+    from .services import couts_ia
+    from .models import AppelIA
     return render(request, "prospection/journee.html", _ctx(
-        request, actions=actions[:12], reste=max(0, len(actions) - 12), total=len(actions), faites=faites,
+        request, couts=couts_ia.mois_en_cours() if (redaction.ia_disponible() or AppelIA.objects.exists()) else None,
+        actions=actions[:12], reste=max(0, len(actions) - 12), total=len(actions), faites=faites,
         objectif=p.objectif_actions_jour, pct=min(100, round(faites / max(1, p.objectif_actions_jour) * 100)), signaux=recents,
         nb_a=Compte.objects.filter(palier="A").exclude(statut__in=regles.STATUTS_INACTIFS).count(), bilan=bilan_nuit(), saison=regles.SAISONS[timezone.localdate().month],
         nb_actifs=Compte.objects.exclude(statut__in=regles.STATUTS_INACTIFS).count(),
@@ -157,7 +160,9 @@ def compte(request, pk):
     message, erreur_ia = None, ""
     if request.GET.get("ia") and redaction.ia_disponible():
         try:
-            message = redaction.rediger_ia(c, contact, canal, ton, consigne)
+            message = redaction.rediger_ia(c, contact, canal, ton, consigne, utilisateur=request.user)
+        except redaction.BudgetIAAtteint as e:
+            erreur_ia = f"{e} Texte proposé par le modèle intégré."
         except Exception as e:  # IA indisponible : on garde le modèle intégré
             erreur_ia = f"L'IA n'a pas répondu ({e.__class__.__name__}). Texte proposé par le modèle intégré."
     message = message or redaction.generer(c, contact, canal, ton, consigne)

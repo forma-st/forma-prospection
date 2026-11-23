@@ -38,6 +38,13 @@ class Parametres(models.Model):
     plages_envoi = models.CharField("Plages d'envoi", max_length=60, default="08:30-11:30,14:00-17:00",
                                     help_text="Heures de Paris, jours ouvrés uniquement.")
 
+    budget_ia_mensuel = models.PositiveIntegerField("Budget IA mensuel (€)", default=30,
+                                                    help_text="Alerte dans « Ma journée » à partir de 80 % du budget.")
+    bloquer_ia_au_budget = models.BooleanField("Suspendre l'IA une fois le budget atteint", default=True,
+                                               help_text="Les modèles intégrés prennent le relais jusqu'au mois suivant.")
+    taux_usd_eur = models.DecimalField("Taux de change (1 $ = … €)", max_digits=5, decimal_places=3, default=0.86,
+                                       help_text="L'API est facturée en dollars.")
+
     class Meta:
         verbose_name = "paramètres"
         verbose_name_plural = "paramètres"
@@ -611,3 +618,28 @@ class ExecutionRecherche(models.Model):
 
     class Meta:
         ordering = ["-debut"]
+
+
+class AppelIA(models.Model):
+    """Un appel à l'API Claude, avec les jetons consommés et son coût (suivi des coûts IA)."""
+
+    USAGES = [("redaction", "Rédaction d'un message"), ("sequence", "Étape de séquence"), ("classement", "Classement d'une réponse"),
+              ("synthese", "Synthèse de fiche ou d'article"), ("autre", "Autre")]
+    cree_le = models.DateTimeField(auto_now_add=True, db_index=True)
+    usage = models.CharField(max_length=12, choices=USAGES, default="autre")
+    modele = models.CharField(max_length=60)
+    tokens_entree = models.PositiveIntegerField(default=0)
+    tokens_sortie = models.PositiveIntegerField(default=0)
+    tokens_cache_ecrits = models.PositiveIntegerField(default=0)
+    tokens_cache_lus = models.PositiveIntegerField(default=0)
+    cout_usd = models.DecimalField(max_digits=10, decimal_places=6, default=0)
+    compte = models.ForeignKey(Compte, null=True, blank=True, on_delete=models.SET_NULL, related_name="appels_ia")
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ["-cree_le"]
+        verbose_name = "appel IA"
+        verbose_name_plural = "appels IA"
+
+    def __str__(self):
+        return f"{self.get_usage_display()} · {self.cree_le:%d/%m/%Y %H:%M}"
