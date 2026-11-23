@@ -107,8 +107,8 @@ PORTEES_A_TESTER = [
     "api_labonneboitev2 office",
     "api_labonneboitev2 search",
 ]
-CHEMINS_LBB = ["", "/recherche", "/entreprises", "/search", "/companies", "/office", "/count", "/nombre",
-               "/openapi.json", "/swagger.json", "/v3/api-docs"]
+CHEMINS_LBB = ["/recherche", "/recherche/nombre", "/recherche/count", "/nombre", "/count", "/entreprise", "/entreprises",
+               "/office", "/offices", "/etablissement", "/openapi.json", "/swagger.json"]
 ESSAI_LBB = {"rome": "N1103", "romes": "N1103", "citycode": "95127", "commune": "95127", "distance": "30",
              "latitude": "49.0364", "longitude": "2.0761"}  # magasinage / Cergy
 
@@ -135,7 +135,10 @@ def diagnostic(client: httpx.Client | None = None) -> list[str]:
             except ValueError:
                 code = ""
             lignes.append(f"portée refusée   « {portee} » ({r.status_code} {code})")
-    lbb = next((j for p, j in jetons.items() if "labonneboite" in p), None)
+    lbb_portees = sorted((p for p in jetons if "labonneboite" in p), key=lambda p: len(p.split()), reverse=True)
+    lbb = jetons[lbb_portees[0]] if lbb_portees else None
+    if lbb:
+        lignes.append(f"Essais avec la portée « {lbb_portees[0]} »")
     if not lbb:
         return lignes + ["Aucune portée La Bonne Boîte acceptée : copiez la portée exacte depuis la page de l'API (rubrique Authentification)."]
     for chemin in CHEMINS_LBB:

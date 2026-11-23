@@ -718,7 +718,7 @@ class DiagnosticFT(TestCase):
             gets = []
 
             def post(self, url, **kw):
-                ok = kw["data"]["scope"] == "api_labonneboitev2"
+                ok = kw["data"]["scope"] in ("api_labonneboitev2", "api_labonneboitev2 search office")
                 return SimpleNamespace(status_code=200 if ok else 400, text="",
                                        json=(lambda: {"access_token": "j", "scope": "api_labonneboitev2"}) if ok else (lambda: {"error": "invalid_scope"}))
 
@@ -730,6 +730,7 @@ class DiagnosticFT(TestCase):
         texte = "\n".join(lignes)
         self.assertIn("PORTÉE ACCEPTÉE  « api_labonneboitev2 »", texte)
         self.assertIn("invalid_scope", texte)
+        self.assertIn("Essais avec la portée « api_labonneboitev2 search office »", texte)
         self.assertIn('GET /recherche : 200 · {"hits": 1, "items": []}', texte)
         self.assertNotIn("tres-secret", texte)
         self.assertEqual(len(H.gets), len(ft.CHEMINS_LBB))
