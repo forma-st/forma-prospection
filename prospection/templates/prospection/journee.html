@@ -20,6 +20,12 @@
   <div class="grid" style="gap:16px;align-content:start">
     <div class="card"><div class="row between"><h2>Objectif du jour</h2><b>{{ faites }} / {{ objectif }}</b></div><div class="prog" style="margin-top:8px"><i style="width:{{ pct }}%"></i></div>
       <p class="small muted" style="margin:8px 0 0">{{ nb_actifs }} prospects actifs, dont {{ nb_a }} en palier A.</p></div>
+    <div class="card"><h2>Cette nuit, la recherche automatique a…</h2>
+      {% if bilan.examines %}<p style="margin:0">trouvé <b>{{ bilan.crees }}</b> nouveau{{ bilan.crees|pluralize:"x" }} prospect{{ bilan.crees|pluralize }} et ajouté <b>{{ bilan.signaux }}</b> signal{{ bilan.signaux|pluralize:"aux" }}, sur {{ bilan.examines }} entreprises examinées.</p>
+      {% if bilan.crees %}<a class="btn sm sec" href="{% url 'prospection:prospects' %}?vue=auto" style="margin-top:8px">Voir les prospects trouvés</a>{% endif %}
+      {% else %}<p class="small muted" style="margin:0">Rien depuis 24 h. Les recherches tournent chaque matin à 7 h 40 ; vous pouvez aussi en lancer une depuis <a href="{% url 'prospection:recherches' %}">Recherche automatique</a>.</p>{% endif %}
+      {% if bilan.erreurs %}<p class="small" style="color:var(--warn);margin:6px 0 0">{{ bilan.erreurs|length }} source{{ bilan.erreurs|length|pluralize }} en erreur : voir le journal.</p>{% endif %}</div>
+    <div class="card"><h2>Ce mois-ci : {{ saison.0|lower }}</h2><p class="small" style="margin:0">{{ saison.1 }}</p></div>
     <div class="card"><h2>Signaux récents</h2><div class="list">
       {% for s in signaux %}<div class="li"><span class="dot info"></span><div class="grow small"><a href="{% url 'prospection:compte' s.compte_id %}"><b>{{ s.compte.nom }}</b></a> · {{ s.type|signal_libelle }}<br><span class="muted">{{ s.texte }} · {{ s.source }} · {{ s.date_signal|date:"d/m/Y" }}</span></div><span class="tier {{ s.compte.palier }}">{{ s.compte.palier }}</span></div>
       {% empty %}<p class="small muted">Aucun signal pour l'instant. Ajoutez-en depuis une fiche, ou importez un fichier.</p>{% endfor %}</div></div>

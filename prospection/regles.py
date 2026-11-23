@@ -83,3 +83,20 @@ def segment_depuis_naf(naf: str) -> str:
     if n.startswith("6920") or n.startswith("7022"):
         return "prescripteur"
     return "autre"
+
+
+# Saisonnalité des achats de formation (à confirmer avec l'historique réel de FORMA'ST)
+SAISONS = {
+    1: ("Démarrage des plans de formation", "Les budgets votés se lancent : proposez des dates du premier trimestre aux comptes déjà en discussion."),
+    2: ("Saisonniers et prévention", "Préparez la saison : hôtellerie, loisirs, agroalimentaire saisonnier ; sessions courtes d'accueil sécurité."),
+    3: ("Recyclages du printemps", "Relancez les MAC SST et les exercices semestriels de vos clients."),
+    4: ("Saisonniers", "Hôtellerie, restauration, centres aquatiques, logistique : accueil sécurité des renforts d'été."),
+    5: ("Prévention chaleur", "Logistique, BTP, industrie : travail par fortes chaleurs, et second exercice d'évacuation de l'année."),
+    6: ("Avant l'été", "Bouclez les sessions du premier semestre ; préparez la rentrée avec les responsables RH."),
+    7: ("Creux d'été", "Peu de décisions : enrichissez la base, préparez les séquences de septembre."),
+    8: ("Creux d'été", "Préparez la rentrée : nouvelles recrues, pic logistique de fin d'année."),
+    9: ("Rentrée : nouveaux arrivants", "Logistique et commerce recrutent avant le pic de fin d'année ; les RH bâtissent le plan de formation N+1."),
+    10: ("Plans de formation N+1", "Moment clé pour entrer au plan de l'an prochain ; semaine européenne de la santé et sécurité au travail."),
+    11: ("Plans N+1 et reliquats", "Inscription au plan N+1 et consommation des budgets restants : proposez des sessions courtes avant décembre."),
+    12: ("Reliquats de budget", "Dernières sessions de l'année ; prise de rendez-vous pour janvier."),
+}

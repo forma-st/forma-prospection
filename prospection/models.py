@@ -550,3 +550,60 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.get_sens_display()} · {self.objet}"
+
+
+# ---------------------------------------------------------------- Phase 3 : recherche automatique de prospects
+
+
+class RechercheAuto(models.Model):
+    """Profil de recherche exécuté chaque nuit dans les sources publiques gratuites."""
+
+    SOURCES = [("sirene", "Annuaire des entreprises (cible)"), ("bodacc", "BODACC (nouveaux établissements)"), ("georisques", "Géorisques (sites ICPE)")]
+    nom = models.CharField(max_length=120)
+    source = models.CharField(max_length=12, choices=SOURCES, default="sirene")
+    actif = models.BooleanField(default=True)
+    codes_naf = models.TextField("Codes NAF", blank=True, help_text="Un par ligne : code exact (52.10B) ou division (10 = toute l'industrie agroalimentaire).")
+    departements = models.CharField("Départements", max_length=400, blank=True, help_text="Séparés par des virgules. Vide = France entière.")
+    effectif_min = models.PositiveIntegerField("Effectif minimum", default=50)
+    effectif_max = models.PositiveIntegerField("Effectif maximum", default=0, help_text="0 = sans limite. Ex. 2000 pour écarter les très grands groupes.")
+    etablissements_min = models.PositiveIntegerField("Établissements minimum", default=1, help_text="2 ou plus pour viser les réseaux multi-sites.")
+    segment = models.CharField(max_length=20, choices=regles.SEGMENT_CHOICES, blank=True, help_text="Vide = déduit du code NAF.")
+    palier_min = models.CharField("Adéquation minimale", max_length=1, default="B",
+                                  choices=[("A", "Forte (80 et plus)"), ("B", "Bonne (65 et plus)"), ("C", "Toutes")])
+    max_par_nuit = models.PositiveSmallIntegerField("Nouveaux prospects max. par nuit", default=15)
+    mois_actifs = models.CharField("Mois actifs", max_length=40, blank=True, help_text="Ex. 9,10,11. Vide = toute l'année.")
+    page_suivante = models.PositiveIntegerField(default=1, editable=False)
+    derniere_execution = models.DateTimeField(null=True, blank=True, editable=False)
+
+    class Meta:
+        ordering = ["-actif", "nom"]
+        verbose_name = "recherche automatique"
+        verbose_name_plural = "recherches automatiques"
+
+    def __str__(self):
+        return self.nom
+
+    def liste_naf(self) -> list[str]:
+        return [x.strip().upper() for x in self.codes_naf.replace(",", "\n").splitlines() if x.strip()]
+
+    def liste_departements(self) -> list[str]:
+        return [d.strip().upper() for d in self.departements.replace(";", ",").split(",") if d.strip()]
+
+    def active_ce_mois(self, mois: int | None = None) -> bool:
+        mois = mois or timezone.localdate().month
+        m = [int(x) for x in self.mois_actifs.replace(";", ",").split(",") if x.strip().isdigit()]
+        return not m or mois in m
+
+
+class ExecutionRecherche(models.Model):
+    recherche = models.ForeignKey(RechercheAuto, on_delete=models.CASCADE, related_name="executions")
+    debut = models.DateTimeField(auto_now_add=True)
+    examines = models.PositiveIntegerField(default=0)
+    crees = models.PositiveIntegerField(default=0)
+    signaux = models.PositiveIntegerField(default=0)
+    ignores = models.PositiveIntegerField(default=0)
+    erreur = models.TextField(blank=True)
+    comptes = models.ManyToManyField(Compte, blank=True, related_name="trouve_par")
+
+    class Meta:
+        ordering = ["-debut"]

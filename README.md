@@ -15,6 +15,12 @@ Application **indépendante** de FORM'AO (suivi, veille et gestion des appels d'
   - « Améliorer avec l'IA » si une clé Anthropic est présente ;
   - contrôle avant envoi noté sur 100, mention RGPD toujours ajoutée ;
   - l'envoi se fait depuis votre messagerie : « J'ai envoyé ce message » l'inscrit dans l'historique et planifie la relance.
+- **Recherche automatique** (phase 3) : chaque matin, l'outil cherche les entreprises de la cible et les présente « À qualifier » :
+  - annuaire officiel des entreprises : activité, départements, effectif minimum et maximum, nombre de sites ;
+  - BODACC : nouveaux établissements ;
+  - Géorisques : sites industriels classés (ICPE) ;
+  - huit recherches livrées (France entière, sites industriels, réseaux multi-sites, de 50 à 2 000 salariés) ;
+  - priorité du mois affichée selon la saisonnalité. Analyse dans [docs/CIBLAGE.md](docs/CIBLAGE.md).
 - **Import** :
   - fichiers CSV ou Excel, avec correspondance des colonnes ;
   - contrôle de chaque ligne (doublons, SIRET, opposition, e-mails personnels), annulable pendant 30 jours ;
@@ -64,6 +70,7 @@ DJANGO_DEBUG=1 .venv/bin/python manage.py migrate && DJANGO_DEBUG=1 .venv/bin/py
 | Commande | Rôle |
 |---|---|
 | `manage.py prospection_quotidienne --sirene` | Reprises, relances des formations à échéance, annuaire, scores (chaque matin) |
+| `manage.py prospection_recherche` | Recherche automatique de prospects (chaque matin ; `--forcer` ignore les mois actifs) |
 | `manage.py prospection_envois` | Séquences, file d'envoi, relève des réponses (toutes les 5 minutes) |
 | `manage.py charger_demo_prospection` | Données fictives de démonstration (`--effacer` pour les retirer) |
 
@@ -72,6 +79,7 @@ DJANGO_DEBUG=1 .venv/bin/python manage.py migrate && DJANGO_DEBUG=1 .venv/bin/py
 | Document | Contenu |
 |---|---|
 | [docs/CAHIER_DES_CHARGES.md](docs/CAHIER_DES_CHARGES.md) | Cahier des charges complet, phasage |
+| [docs/CIBLAGE.md](docs/CIBLAGE.md) | Analyse du marché et de la concurrence, cœur de cible, saisonnalité |
 | [docs/COMPARATIF.md](docs/COMPARATIF.md) | Comparatif du marché (Koban, HubSpot, Salesforce, Attio…) |
 | [docs/maquette.html](docs/maquette.html) | Maquette fonctionnelle (ouvrir dans un navigateur) |
 | [docs/API_FORMAO.md](docs/API_FORMAO.md) | Lien facultatif avec FORM'AO |

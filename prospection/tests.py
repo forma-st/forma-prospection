@@ -509,3 +509,102 @@ class Phase2(TestCase):
             m3 = Message.objects.create(compte=self.c, contact=self.k, boite=self.boite, destinataire=self.k.email, objet="À valider", corps="z")
             self.client.post("/prospection/messagerie/", {"action": "envoyer", "message_id": m3.pk, "objet": "À valider", "corps": "z"})
         self.assertEqual(Message.objects.get(pk=m3.pk).statut, "envoye")
+
+
+# ---------------------------------------------------------------------------- Phase 3 : recherche automatique
+
+from .models import ExecutionRecherche, RechercheAuto  # noqa: E402
+from .services import recherche  # noqa: E402
+
+
+def entreprise(siren, nom, naf="52.10B", tranche="22", sites=2, cp="95000", dep="95", etat="A"):
+    return {"siren": siren, "nom_complet": nom, "activite_principale": naf, "tranche_effectif_salarie": tranche, "nombre_etablissements_ouverts": sites,
+            "etat_administratif": etat, "siege": {"siret": siren + "00011", "code_postal": cp, "departement": dep, "libelle_commune": "CERGY",
+                                                  "activite_principale": naf, "latitude": "49.03", "longitude": "2.06"}, "complements": {"liste_idcc": ["16"]}}
+
+
+@mock.patch("prospection.services.recherche.time.sleep", lambda s: None)
+class RechercheAutomatique(TestCase):
+    def setUp(self):
+        self.r = RechercheAuto.objects.get(nom__startswith="Logistique et entreposage")  # livrée par défaut
+
+    def test_outils(self):
+        self.assertEqual(recherche.tranches_depuis(50)[0], "21")
+        self.assertEqual(recherche.tranches_depuis(50, 2000), ["21", "22", "31", "32", "41", "42"])
+        self.assertTrue(recherche.correspond_naf("10.13A", ["10"]))
+        self.assertFalse(recherche.correspond_naf("20.16Z", ["10", "52.10B"]))
+        self.assertEqual(recherche.section_de("22"), "C")
+        self.assertEqual(RechercheAuto.objects.count(), 8)
+
+    def test_sirene_filtre_et_dedoublonne(self):
+        page = {"results": [entreprise("111111118", "ENTREPOTS DU NORD"), entreprise("222222226", "FERMEE SA", etat="C"),
+                            entreprise("333333334", "PETITE LOGISTIQUE", tranche="12")], "total_pages": 1}
+        with mock.patch("prospection.services.recherche.get_json", return_value=page) as g:
+            ex = recherche.executer(self.r)
+            params = g.call_args.kwargs["params"]
+        self.assertIn("52.10B", params["activite_principale"])
+        self.assertNotIn("departement", params)  # France entière
+        self.assertEqual((ex.examines, ex.crees, ex.erreur), (3, 1, ""))
+        c = Compte.objects.get(siren="111111118")
+        self.assertEqual((c.statut, c.segment, c.ville), ("À qualifier", "logistique", "Cergy"))
+        self.assertTrue(c.source.startswith("Recherche auto"))
+        with mock.patch("prospection.services.recherche.get_json", return_value=page):
+            self.assertEqual(recherche.executer(self.r).crees, 0)  # déjà connu
+
+    def test_palier_minimum(self):
+        self.r.palier_min = "A"
+        self.r.save()
+        page = {"results": [entreprise("111111118", "ENTREPOTS DU SUD", cp="13000", dep="13", sites=1)], "total_pages": 1}
+        with mock.patch("prospection.services.recherche.get_json", return_value=page):
+            ex = recherche.executer(self.r)
+        self.assertEqual((ex.crees, ex.ignores), (0, 1))
+        self.assertFalse(Compte.objects.exists())
+
+    def test_bodacc_signal_et_creation(self):
+        connu = Compte.objects.create(nom="Déjà connu", siren="444444442", segment="logistique", effectif=200)
+        r = RechercheAuto.objects.get(source="bodacc")
+        annonces = {"results": [{"registre": ["444 444 442", "444444442"], "dateparution": "2026-11-20", "ville": "Roissy"},
+                                {"registre": ["111 111 118"], "dateparution": "2026-11-19", "numerodepartement": "95"}]}
+        def faux(url, params=None):
+            if "bodacc" in url:
+                return annonces if params.get("offset", 0) == 0 else {"results": []}
+            return {"results": [entreprise("111111118", "NOUVEL ENTREPOT")]}
+        with mock.patch("prospection.services.recherche.get_json", side_effect=faux):
+            ex = recherche.executer(r)
+        self.assertEqual((ex.signaux, ex.crees), (1, 1))
+        self.assertTrue(connu.signaux.filter(type="site", source="BODACC").exists())
+        self.assertTrue(Compte.objects.get(siren="111111118").signaux.filter(type="site").exists())
+
+    def test_georisques_marque_icpe(self):
+        connu = Compte.objects.create(nom="Usine connue", siren="555555556", segment="industrie", effectif=150)
+        r = RechercheAuto.objects.get(source="georisques")
+        r.departements = "60"
+        r.save()
+        with mock.patch("prospection.services.recherche.get_json", return_value={"data": [{"siret": "55555555600012", "raisonSociale": "USINE", "regime": "Autorisation"}]}):
+            ex = recherche.executer(r)
+        connu.refresh_from_db()
+        self.assertTrue(connu.icpe)
+        self.assertEqual(ex.signaux, 1)
+
+    def test_source_en_panne_et_saison(self):
+        with mock.patch("prospection.services.recherche.get_json", side_effect=RuntimeError("503")):
+            ex = recherche.executer(self.r)
+        self.assertIn("503", ex.erreur)
+        h = RechercheAuto.objects.get(nom__startswith="Hôtellerie")
+        self.assertTrue(h.active_ce_mois(3))
+        self.assertFalse(h.active_ce_mois(11))
+
+    def test_ecrans(self):
+        u = User.objects.create_user("julie", password="x", is_staff=True, is_superuser=True)
+        self.client.force_login(u)
+        self.assertContains(self.client.get("/prospection/recherche-automatique/"), "Logistique et entreposage")
+        self.assertContains(self.client.get(f"/prospection/recherche-automatique/?id={self.r.pk}"), "Modifier")
+        with mock.patch("prospection.views_recherche._lancer_en_arriere_plan") as lancer:
+            self.client.post("/prospection/recherche-automatique/", {"action": "lancer", "id": self.r.pk})
+            lancer.assert_called_once()
+        self.client.post("/prospection/recherche-automatique/", {"action": "enregistrer", "nom": "Test 95", "source": "sirene", "codes_naf": "52.10B",
+                                                                 "departements": "95", "effectif_min": "20", "etablissements_min": "1", "palier_min": "B", "max_par_nuit": "5"})
+        self.assertTrue(RechercheAuto.objects.filter(nom="Test 95", effectif_min=20).exists())
+        ExecutionRecherche.objects.create(recherche=self.r, examines=40, crees=3)
+        self.assertContains(self.client.get("/prospection/"), "Voir les prospects trouvés")
+        self.assertEqual(self.client.get("/prospection/prospects/?vue=auto").status_code, 200)

@@ -1,0 +1,39 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}Recherche automatique{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Recherche automatique</h1><div class="sub">Chaque matin, Forma Prospect cherche dans les sources publiques les entreprises de votre cible. Elles arrivent « À qualifier » : rien n'est contacté sans vous.</div></div>
+{% if user.is_staff %}<a class="btn" href="?nouveau=1#formulaire">Nouvelle recherche</a>{% endif %}</div>
+<div class="kpis">
+  <div class="kpi"><span class="l">Prospects trouvés (24 h)</span><span class="v">{{ bilan.crees }}</span></div>
+  <div class="kpi"><span class="l">Signaux ajoutés (24 h)</span><span class="v">{{ bilan.signaux }}</span></div>
+  <div class="kpi"><span class="l">Entreprises examinées (24 h)</span><span class="v">{{ bilan.examines }}</span></div>
+  <div class="kpi"><span class="l">Ce mois-ci</span><span class="v" style="font-size:16px">{{ saison.0 }}</span><span class="small muted">{{ saison.1 }}</span></div>
+</div>
+<div class="tw"><table><thead><tr><th>Recherche</th><th>Source</th><th class="hide-m">Cible</th><th>Dernier passage</th><th></th></tr></thead><tbody>
+{% for r in liste %}{% with e=r.executions.all|first %}<tr>
+  <td><b>{{ r.nom }}</b>{% if not r.actif %} <span class="chip">inactive</span>{% elif not r|active_ce_mois %} <span class="chip warn">hors saison</span>{% endif %}<div class="small muted">adéquation {{ r.get_palier_min_display|lower }} · {{ r.max_par_nuit }} max. par nuit{% if r.mois_actifs %} · mois {{ r.mois_actifs }}{% endif %}</div></td>
+  <td class="small">{{ r.get_source_display }}</td>
+  <td class="hide-m small">{% if r.codes_naf %}NAF {{ r.liste_naf|join:", " }}{% else %}toutes activités{% endif %} · {% if r.departements %}dép. {{ r.departements }}{% else %}France entière{% endif %} · {% if r.effectif_max %}{{ r.effectif_min }} à {{ r.effectif_max }} sal.{% else %}{{ r.effectif_min }} sal. et plus{% endif %}{% if r.etablissements_min > 1 %} · {{ r.etablissements_min }} sites et plus{% endif %}</td>
+  <td class="small">{% if e %}{{ e.debut|date:"d/m H:i" }} · <b>{{ e.crees }}</b> créés{% if e.signaux %}, {{ e.signaux }} signaux{% endif %}{% if e.erreur %} <span class="chip bad" title="{{ e.erreur }}">erreur</span>{% endif %}{% else %}<span class="muted">jamais</span>{% endif %}</td>
+  <td>{% if user.is_staff %}<div class="row" style="flex-wrap:nowrap"><form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><button class="btn sm sec" name="action" value="lancer">Lancer</button></form>
+    <a class="btn sm ghost" href="?id={{ r.pk }}#formulaire">Modifier</a><form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><button class="btn sm ghost" name="action" value="basculer">{% if r.actif %}Désactiver{% else %}Activer{% endif %}</button></form></div>{% endif %}</td>
+</tr>{% endwith %}{% empty %}<tr><td colspan="5" class="muted">Aucune recherche.</td></tr>{% endfor %}
+</tbody></table></div>
+{% if user.is_staff and edit or user.is_staff and nouveau %}
+<form method="post" class="card grid" style="gap:8px;max-width:820px" id="formulaire">{% csrf_token %}<input type="hidden" name="action" value="enregistrer"><input type="hidden" name="id" value="{{ edit.pk|default:'' }}">
+  <h2>{% if edit %}Modifier « {{ edit.nom }} »{% else %}Nouvelle recherche{% endif %}</h2>
+  <div class="row"><label class="f" style="flex:2">Nom<input type="text" name="nom" value="{{ edit.nom|default:'' }}" required></label>
+  <label class="f">Source<select name="source">{% for k, l in sources %}<option value="{{ k }}" {% if edit.source == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label></div>
+  <label class="f">Codes NAF (un par ligne : code exact comme 52.10B, ou division comme 10 pour toute l'agroalimentaire)<textarea name="codes_naf" rows="3">{{ edit.codes_naf|default:'' }}</textarea></label>
+  <div class="row"><label class="f" style="flex:2">Départements (vide = France entière)<input type="text" name="departements" value="{{ edit.departements|default:'' }}" placeholder="ex. 95,78,60"></label>
+  <label class="f">Effectif min.<input type="number" name="effectif_min" value="{{ edit.effectif_min|default:50 }}" min="0" style="width:100px"></label>
+  <label class="f">Effectif max. (0 = sans)<input type="number" name="effectif_max" value="{{ edit.effectif_max|default:0 }}" min="0" style="width:110px"></label>
+  <label class="f">Sites min.<input type="number" name="etablissements_min" value="{{ edit.etablissements_min|default:1 }}" min="1" style="width:90px"></label></div>
+  <div class="row"><label class="f">Segment<select name="segment"><option value="">Déduit du code NAF</option>{% for k, l in segments %}<option value="{{ k }}" {% if edit.segment == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+  <label class="f">Adéquation minimale à la cible<select name="palier_min"><option value="A" {% if edit.palier_min == 'A' %}selected{% endif %}>Forte (80 et plus)</option><option value="B" {% if edit.palier_min != 'A' and edit.palier_min != 'C' %}selected{% endif %}>Bonne (65 et plus)</option><option value="C" {% if edit.palier_min == 'C' %}selected{% endif %}>Toutes</option></select></label>
+  <label class="f">Max. par nuit<input type="number" name="max_par_nuit" value="{{ edit.max_par_nuit|default:15 }}" min="1" max="100" style="width:90px"></label>
+  <label class="f">Mois actifs (vide = toute l'année)<input type="text" name="mois_actifs" value="{{ edit.mois_actifs|default:'' }}" placeholder="ex. 9,10,11" style="width:140px"></label></div>
+  <button class="btn" style="justify-self:start">Enregistrer</button></form>{% endif %}
+<div class="card"><h2>Journal</h2><div class="list">{% for e in journal %}<div class="li small"><span class="dot {% if e.erreur %}bad{% elif e.crees %}ok{% endif %}"></span><div class="grow"><b>{{ e.debut|date:"d/m H:i" }}</b> · {{ e.recherche.nom }} : {{ e.examines }} examinées, <b>{{ e.crees }}</b> créées, {{ e.signaux }} signaux, {{ e.ignores }} écartées{% if e.erreur %}<br><span style="color:var(--bad)">{{ e.erreur }}</span>{% endif %}</div></div>{% empty %}<p class="small muted">Aucun passage pour l'instant.</p>{% endfor %}</div></div>
+<p class="small muted">Sources gratuites : annuaire officiel des entreprises (INSEE / DINUM), BODACC, Géorisques (installations classées). Les entreprises déjà présentes, clientes, fermées ou trop éloignées de la cible sont écartées. Le score complet se construit ensuite avec les contacts et les signaux. Analyse et recommandations de ciblage : docs/CIBLAGE.md.</p>
+{% endblock %}

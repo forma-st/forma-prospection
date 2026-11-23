@@ -21,6 +21,7 @@
     <a href="{% url 'prospection:reponses' %}" class="{% if n == 'reponses' %}on{% endif %}"><span class="lbl">{% icone 'reponses' %}<span>Réponses</span></span>{% if nb_reponses %}<span class="badge">{{ nb_reponses }}</span>{% endif %}</a>
     <a href="{% url 'prospection:statistiques' %}" class="{% if n == 'statistiques' %}on{% endif %}"><span class="lbl">{% icone 'stats' %}<span>Statistiques</span></span></a>
     <div class="grp">Alimenter</div>
+    <a href="{% url 'prospection:recherches' %}" class="{% if n == 'recherches' %}on{% endif %}"><span class="lbl">{% icone 'recherche' %}<span>Recherche automatique</span></span></a>
     <a href="{% url 'prospection:import' %}" class="{% if n == 'import' or n == 'import_detail' %}on{% endif %}"><span class="lbl">{% icone 'import' %}<span>Import de fichiers</span></span></a>
     <a href="{% url 'prospection:historique' %}" class="{% if n == 'historique' %}on{% endif %}"><span class="lbl">{% icone 'historique' %}<span>Historique des formations</span></span>{% if nb_relances %}<span class="badge">{{ nb_relances }}</span>{% endif %}</a>
     <div class="grp">Contacter</div>

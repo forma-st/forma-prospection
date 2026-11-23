@@ -28,7 +28,7 @@ def _retour_sur(request, defaut: str) -> str:
     return r if r and url_has_allowed_host_and_scheme(r, allowed_hosts={request.get_host()}, require_https=request.is_secure()) else defaut
 
 
-VUES = [("tous", "Tous"), ("A", "Palier A"), ("signaux", "Avec signal"), ("sanscontact", "Sans contact"),
+VUES = [("tous", "Tous"), ("auto", "Trouvés automatiquement"), ("A", "Palier A"), ("signaux", "Avec signal"), ("sanscontact", "Sans contact"),
         ("public", "Acheteurs publics"), ("clients", "Clients")]
 
 
@@ -54,10 +54,11 @@ def journee(request):
     p = Parametres.get()
     faites = svc_journee.faites_aujourd_hui(request.user)
     recents = Signal.objects.select_related("compte").filter(actif=True)[:6]
+    from .services.recherche import bilan_nuit
     return render(request, "prospection/journee.html", _ctx(
         request, actions=actions[:12], reste=max(0, len(actions) - 12), total=len(actions), faites=faites,
         objectif=p.objectif_actions_jour, pct=min(100, round(faites / max(1, p.objectif_actions_jour) * 100)), signaux=recents,
-        nb_a=Compte.objects.filter(palier="A").exclude(statut__in=regles.STATUTS_INACTIFS).count(),
+        nb_a=Compte.objects.filter(palier="A").exclude(statut__in=regles.STATUTS_INACTIFS).count(), bilan=bilan_nuit(), saison=regles.SAISONS[timezone.localdate().month],
         nb_actifs=Compte.objects.exclude(statut__in=regles.STATUTS_INACTIFS).count(),
     ))
 
@@ -97,6 +98,8 @@ def _filtrer(request):
         qs = qs.filter(departement=g["departement"])
     if vue == "signaux":
         qs = qs.filter(signaux__actif=True).distinct()
+    if vue == "auto":
+        qs = qs.filter(source__startswith="Recherche auto")
     comptes = list(qs.order_by("-score", "nom")[:500])
     if vue == "sanscontact":
         comptes = [c for c in comptes if not c.contact_principal() or c.contact_principal().role == "standard"]

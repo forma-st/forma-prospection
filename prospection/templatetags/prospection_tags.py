@@ -88,3 +88,8 @@ def get_item(d, k):
 @register.filter
 def split_pairs(s):
     return [tuple(x.split(":", 1)) for x in s.split(",")]
+
+
+@register.filter
+def active_ce_mois(r):
+    return r.active_ce_mois()
