@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Récupère la dernière version, met la base à jour et redémarre l'outil Prospection.
+# Récupère la dernière version, met la base à jour et redémarre Forma Prospect.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bash deploy/sauvegarder.sh

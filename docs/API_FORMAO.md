@@ -89,10 +89,10 @@ def acheteurs(request):
 ### Message à donner à la session Claude Code qui développe FORM'AO
 
 ```
-Ajoute à FORM'AO une petite API en lecture seule pour l'outil Prospection (application séparée) :
+Ajoute à FORM'AO une petite API en lecture seule pour Forma Prospect (application séparée) :
 GET /api/v1/profil, /api/v1/catalogue, /api/v1/acheteurs?depuis=…, protégée par l'en-tête
 Authorization: Bearer <PROSPECTION_JETON> (variable du .env, comparaison à temps constant, 401 sinon).
-Le contrat exact et un exemple d'implémentation sont dans docs/API_FORMAO.md de l'outil Prospection
+Le contrat exact et un exemple d'implémentation sont dans docs/API_FORMAO.md de Forma Prospect
 (colle-le ici). Ajoute des tests (jeton absent, faux, bon) et n'expose aucun prix ni donnée si le jeton
 n'est pas configuré.
 ```

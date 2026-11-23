@@ -10,6 +10,8 @@ Module **interne** de FORMA'ST, testé d'abord seul, puis intégré en tout ou p
 >
 > **v0.5** : reprise du meilleur de Sellsy, Axonaut, HubSpot, Furious et Attio (3.19).
 >
+> **v0.9 (23/11/2026)** : l'outil s'appelle **Forma Prospect**. Phase 2 livrée : messagerie (SMTP, relève IMAP, file d'envoi, plafonds, plages, mode test), séquences multicanales, tri des réponses, statistiques ; vue en colonnes et inscription groupée. Restent pour la suite : connexion Microsoft 365 (Graph), pilote automatique, automatisations Quand → Si → Alors, colonnes IA, enrichissement en cascade.
+>
 > **v0.8 (23/11/2026)** : la Prospection devient un **outil séparé** de FORM'AO (son propre projet, sa base, ses comptes, son installation, port 8010). Le lien avec FORM'AO est facultatif et passe par une API en lecture seule (`docs/API_FORMAO.md`) : profil, catalogue, acheteurs publics pour le suivi commercial. Profil et catalogue sont désormais gérés dans l'outil (menu *Catalogue et profil*).
 >
 > **v0.7 (23/11/2026)** : **version de test en place** dans l'outil AO (module `prospection/`, menu *Prospection*). Livré : Ma journée, prospects et fiche, score et besoin, rédaction (modèles + IA) avec contrôle avant envoi, import CSV / Excel avec dédoublonnage, annuaire officiel, historique des formations et relances, tâches, opposition, **option LinkedIn** (connexion du compte, publication, invitations préparées, plafonds, consignes du copilote). Reste : messagerie et séquences (P2), signaux automatiques (P3), CRM (P4).

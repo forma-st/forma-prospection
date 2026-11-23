@@ -16,8 +16,12 @@
     <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="tache">
       <select name="type" aria-label="Type de tâche"><option value="appel">Appel</option><option value="email">E-mail</option>{% if linkedin_actif %}<option value="linkedin">LinkedIn</option>{% endif %}<option value="qualifier">Qualification</option></select>
       <input type="date" name="echeance" aria-label="Échéance"><button class="btn sm sec">Créer une tâche</button></form>
+    {% if contact and sequences_dispo %}<form method="post" action="{% url 'prospection:inscrire' %}" class="row">{% csrf_token %}<input type="hidden" name="contact" value="{{ contact.pk }}"><input type="hidden" name="retour" value="{% url 'prospection:compte' c.pk %}">
+      <select name="sequence" aria-label="Séquence">{% for s in sequences_dispo %}<option value="{{ s.pk }}">{{ s.nom }}</option>{% endfor %}</select><button class="btn sm" {% if inscription_en_cours %}disabled title="Déjà dans une séquence"{% endif %}>Inscrire {{ contact.prenom|default:contact.nom }} en séquence</button></form>{% endif %}
   </div>
 </div>
+{% if inscription_en_cours %}<div class="card row between small"><span>{{ inscription_en_cours.contact }} est dans la séquence <a href="{% url 'prospection:sequence' inscription_en_cours.sequence_id %}"><b>{{ inscription_en_cours.sequence.nom }}</b></a> · {{ inscription_en_cours.get_statut_display|lower }} · prochaine étape le {{ inscription_en_cours.prochaine_le|date:"d/m H:i" }}</span>
+  <form method="post" action="{% url 'prospection:desinscrire' inscription_en_cours.pk %}">{% csrf_token %}<input type="hidden" name="retour" value="{% url 'prospection:compte' c.pk %}"><button class="btn sm ghost">Arrêter la séquence</button></form></div>{% endif %}
 {% if c.statut == "Opposé" %}<div class="confirm"><b>Opposition enregistrée.</b> Ce prospect est exclu de tout envoi, sur tous les canaux.</div>{% endif %}
 
 <div class="grid g2">
@@ -49,9 +53,10 @@
         {% if canal == "email" or canal == "relance" %}{% if contact.email and not oppose_email %}<a class="btn sm sec" id="mailto" href="mailto:{{ contact.email }}">Ouvrir dans ma messagerie</a>{% endif %}{% endif %}
         {% if oppose_email %}<span class="chip bad">Adresse sur la liste d'opposition : envoi bloqué</span>{% else %}
         <label class="row small">Relancer dans <select name="relance"><option value="">pas de relance</option><option value="3">3 j</option><option value="5" selected>5 j</option><option value="10">10 j</option></select></label>
-        <button class="btn sm" {% if not contact %}disabled{% endif %}>J'ai envoyé ce message</button>{% endif %}
+        {% if canal == "email" or canal == "relance" %}<button class="btn sm" formaction="{% url 'prospection:envoyer' c.pk %}" {% if not contact or not contact.email %}disabled{% endif %} title="Programmé dans la file d'envoi, au prochain créneau">Envoyer depuis Forma Prospect</button>{% endif %}
+        <button class="btn sm sec" {% if not contact %}disabled{% endif %}>J'ai envoyé ce message moi-même</button>{% endif %}
       </div>
-      <p class="small muted" style="margin:6px 0 0">L'envoi se fait depuis votre messagerie (module d'envoi prévu en phase 2). Ce bouton l'inscrit dans l'historique, note l'information RGPD et planifie la relance.</p>
+      <p class="small muted" style="margin:6px 0 0">« Envoyer depuis Forma Prospect » passe par la boîte d'envoi (file, plafonds, plages horaires{% if mode_test %}, <b>mode test</b>{% endif %}). « J'ai envoyé ce message moi-même » note un envoi fait depuis votre messagerie.</p>
     </form>
   </div>
 

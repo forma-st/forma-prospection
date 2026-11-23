@@ -6,7 +6,7 @@
 <div class="grid g2">
   <div class="card"><div class="row between"><h2>Prochaines actions</h2><span class="small muted">réponses chaudes, retards, échéances clients, prospects A</span></div>
     {% for a in actions %}
-    <div class="nba"><span class="ico {% if a.chaud %}hot{% endif %}">{% if a.icone == 'appel' %}☎{% elif a.icone == 'linkedin' %}in{% elif a.icone == 'email' %}✉{% elif a.icone == 'clock' %}⏱{% elif a.icone == 'spark' %}✦{% else %}✓{% endif %}</span>
+    <div class="nba"><span class="ico {% if a.chaud %}hot{% endif %}">{% icone a.icone %}</span>
       <div style="min-width:0"><b>{{ a.titre }}</b>{% if a.sous_titre %} <span class="small muted">· {{ a.sous_titre }}</span>{% endif %}<div class="why">{{ a.raison }}</div></div>
       <div class="acts">
         {% if a.historique_id %}<form method="post" action="{% url 'prospection:historique_relancer' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ a.historique_id }}"><input type="hidden" name="cle" value="{{ a.cle }}"><input type="hidden" name="retour" value="{% url 'prospection:journee' %}"><button class="btn sm">{{ a.bouton }}</button></form>

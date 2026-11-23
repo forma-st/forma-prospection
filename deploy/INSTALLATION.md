@@ -1,6 +1,6 @@
-# Installation de l'outil Prospection (Mac ou PC Linux du bureau)
+# Installation de Forma Prospect (Mac ou PC Linux du bureau)
 
-L'outil Prospection est **indépendant de FORM'AO** : sa propre base, ses comptes, son adresse (port 8010 par défaut). Il peut tourner sur le même ordinateur que FORM'AO, et s'y relier si vous le souhaitez (voir [docs/API_FORMAO.md](../docs/API_FORMAO.md)). Compter 10 minutes.
+Forma Prospect est **indépendant de FORM'AO** : sa propre base, ses comptes, son adresse (port 8010 par défaut). Il peut tourner sur le même ordinateur que FORM'AO, et s'y relier si vous le souhaitez (voir [docs/API_FORMAO.md](../docs/API_FORMAO.md)). Compter 10 minutes.
 
 ## 1. Prérequis (une seule fois)
 
@@ -32,7 +32,7 @@ Le dépôt est privé : connectez-vous d'abord à GitHub (GitHub Desktop, ou `gh
 bash deploy/installer.sh --demarrage-auto
 ```
 
-Le script installe les dépendances, crée le fichier `.env`, prépare la base (avec un catalogue d'exemple) et vous demande un **identifiant et un mot de passe administrateur**. Avec `--demarrage-auto`, l'outil démarre aussitôt et redémarre à chaque ouverture de session ; le traitement du matin tourne à 7 h 40 (reprises, relances, annuaire, scores, sauvegarde).
+Le script installe les dépendances, crée le fichier `.env`, prépare la base (avec un catalogue d'exemple) et vous demande un **identifiant et un mot de passe administrateur**. Avec `--demarrage-auto`, l'outil démarre aussitôt et redémarre à chaque ouverture de session ; le traitement du matin tourne à 7 h 40 (reprises, relances, annuaire, scores, sauvegarde) et les envois toutes les 5 minutes (séquences, file d'envoi, relève des réponses).
 
 - `--demo` : ajoute des prospects **fictifs** pour faire le tour de l'outil. Pour les retirer : `.venv/bin/python manage.py charger_demo_prospection --effacer`.
 - Autre port : `PORT=8020 bash deploy/installer.sh --demarrage-auto`.
@@ -59,18 +59,28 @@ Redémarrer sur Mac :
 launchctl kickstart -k gui/$(id -u)/fr.formast.prospection
 ```
 
-## 6. Au quotidien
+## 6. Messagerie (phase 2)
+
+Dans **Messagerie** :
+1. Ajoutez une **boîte d'envoi** (serveur SMTP, identifiant, mot de passe ; serveur IMAP pour relever les réponses), puis cliquez sur **Tester**.
+2. Laissez le **mode test** activé et renseignez votre adresse de test : tous les e-mails vous arrivent, avec le vrai destinataire dans l'objet.
+3. Inscrivez quelques prospects dans une **séquence** (depuis leur fiche ou en les cochant dans la liste). Les e-mails préparés apparaissent dans *Messagerie → À valider*.
+4. Quand tout vous convient, décochez le mode test.
+
+Pour Microsoft 365, l'envoi SMTP authentifié doit être autorisé sur la boîte (centre d'administration Exchange) ; la connexion directe Microsoft (Graph) est prévue ensuite.
+
+## 7. Au quotidien
 
 | Besoin | Commande |
 |---|---|
 | Mettre à jour | `bash deploy/mettre_a_jour.sh` (sauvegarde d'abord, puis redémarre) |
 | Sauvegarder maintenant | `bash deploy/sauvegarder.sh` → `sauvegardes/` (30 jours) |
 | Démarrer à la main | `bash deploy/demarrer.sh` |
-| Journaux | `logs/serveur.log`, `logs/matin.log` |
+| Journaux | `logs/serveur.log`, `logs/matin.log`, `logs/envois.log` |
 
 Copiez régulièrement `sauvegardes/` sur un disque externe ou un partage réseau.
 
-## 7. Si vous aviez installé la version mélangée (`~/outil-ao`, AO + Prospection)
+## 8. Si vous aviez installé la version mélangée (`~/outil-ao`, AO + Prospection)
 
 Cette version de test est remplacée par deux outils séparés. Pour reprendre vos prospects dans le nouvel outil :
 

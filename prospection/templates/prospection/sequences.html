@@ -1,0 +1,14 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}Séquences{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Séquences</h1><div class="sub">Enchaînements d'e-mails, d'appels et de tâches LinkedIn. Arrêt automatique sur réponse, opposition, rebond ou RDV ; pause en cas d'absence.</div></div>
+{% if user.is_staff %}<form method="post" class="row">{% csrf_token %}<input type="text" name="nom" placeholder="Nom de la nouvelle séquence" required><button class="btn">Créer</button></form>{% endif %}</div>
+<div class="tw"><table><thead><tr><th>Séquence</th><th>Étapes</th><th>Validation</th><th>En cours</th><th>Inscrits</th><th>E-mails envoyés</th><th>Taux de réponse</th></tr></thead><tbody>
+{% for s in liste %}{% with st=stats|get_item:s.pk %}<tr class="click" data-href="{% url 'prospection:sequence' s.pk %}">
+<td><a href="{% url 'prospection:sequence' s.pk %}"><b>{{ s.nom }}</b></a>{% if not s.actif %} <span class="chip">inactive</span>{% endif %}<div class="small muted">{{ s.description }}</div></td>
+<td class="small">{% for e in s.etapes.all %}<span class="ty {{ e.type }}">{{ e.get_type_display }}</span> {% endfor %}</td>
+<td class="small">{{ s.get_mode_validation_display }}</td><td>{{ s.nb_actives }}</td><td>{{ s.nb_total }}</td><td>{{ st.envoyes }}</td><td>{{ st.taux }} %</td></tr>{% endwith %}
+{% empty %}<tr><td colspan="7" class="muted">Aucune séquence.</td></tr>{% endfor %}
+</tbody></table></div>
+<p class="small muted">Pour inscrire des prospects : depuis leur fiche, ou en les cochant dans la liste des prospects.</p>
+{% endblock %}

@@ -351,3 +351,161 @@ class Autonomie(TestCase):
         with mock.patch("prospection.services.formao.httpx.get", return_value=SimpleNamespace(status_code=401, json=dict)):
             r = self.client.post("/prospection/import/acheteurs-ao/", follow=True)
         self.assertContains(r, "refuse le jeton")
+
+
+# ---------------------------------------------------------------------------- Phase 2
+
+from datetime import datetime  # noqa: E402
+
+from .models import BoiteEnvoi, EtapeSequence, Inscription, Message, Sequence  # noqa: E402
+from .services import messagerie, reponses, sequences  # noqa: E402
+
+
+def paris(*a):
+    return timezone.make_aware(datetime(*a))
+
+
+class FauxSMTP:
+    def __init__(self):
+        self.envoyes = []
+
+    def send_message(self, e):
+        self.envoyes.append(e)
+
+
+class Phase2(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user("julie", password="x", is_staff=True, is_superuser=True)
+        self.c = vexin()
+        self.k = self.c.contacts.get(nom="Vasseur")
+        self.boite = BoiteEnvoi.objects.create(nom="Julie", adresse="julie@formast.example", smtp_hote="smtp.example", utilisateur=self.u)
+        p = Parametres.get()
+        p.adresse_test = "test@formast.example"
+        p.save()
+        self.seq = Sequence.objects.get(nom="Ouverture de site")  # livrée par défaut (5 étapes, premier e-mail validé)
+
+    def test_creneaux(self):
+        self.assertEqual(messagerie.prochain_creneau(paris(2026, 11, 21, 10, 0)), paris(2026, 11, 23, 8, 30))  # samedi → lundi
+        self.assertEqual(messagerie.prochain_creneau(paris(2026, 11, 18, 12, 0)), paris(2026, 11, 18, 14, 0))  # pause de midi
+        self.assertEqual(messagerie.prochain_creneau(paris(2026, 11, 18, 18, 0)), paris(2026, 11, 19, 8, 30))
+        self.assertTrue(messagerie.dans_les_plages(paris(2026, 11, 18, 9, 0)))
+        self.assertFalse(messagerie.dans_les_plages(paris(2026, 11, 22, 9, 0)))
+
+    def test_inscription_refusee(self):
+        sequences.inscrire(self.seq, self.k, self.u)
+        with self.assertRaises(sequences.InscriptionImpossible):
+            sequences.inscrire(self.seq, self.k, self.u)  # déjà en cours
+        sans = Contact.objects.create(compte=self.c, nom="Sans mail", role="decideur")
+        with self.assertRaises(sequences.InscriptionImpossible):
+            sequences.inscrire(self.seq, sans, self.u)
+        Opposition.objects.create(valeur="@autre.example")
+        o = Contact.objects.create(compte=self.c, nom="Opposé", email="x@autre.example")
+        with self.assertRaises(sequences.InscriptionImpossible):
+            sequences.inscrire(self.seq, o, self.u)
+
+    def test_sequence_complete_en_mode_test(self):
+        ins = sequences.inscrire(self.seq, self.k, self.u)
+        self.c.refresh_from_db()
+        self.assertEqual(self.c.statut, "En contact")
+        t0 = messagerie.prochain_creneau(timezone.now() + timedelta(minutes=1))
+        sequences.avancer(t0)
+        m1 = Message.objects.get(inscription=ins)
+        self.assertEqual(m1.statut, "a_valider")  # premier e-mail validé
+        self.assertIn("ne plus recevoir", m1.corps)
+        messagerie.programmer(m1, self.u, quand=t0)
+        smtp = FauxSMTP()
+        self.assertEqual(messagerie.traiter_file(t0, connexion=smtp)["envoyes"], 1)
+        e = smtp.envoyes[0]
+        self.assertEqual(e["To"], "test@formast.example")  # mode test par défaut
+        self.assertTrue(e["Subject"].startswith("[TEST → c.vasseur@logistique-vexin.example]"))
+        self.assertIn("mailto:julie@formast.example", e["List-Unsubscribe"])
+        with self.assertRaises(messagerie.EnvoiImpossible):
+            messagerie.envoyer(Message.objects.get(pk=m1.pk), connexion=smtp)  # jamais deux fois
+        sequences.avancer(t0 + timedelta(days=2, minutes=1))  # J+2 : LinkedIn
+        self.assertTrue(Tache.objects.filter(type="linkedin", contact=self.k).exists())
+        sequences.avancer(t0 + timedelta(days=5, minutes=2))  # J+5 : appel
+        self.assertTrue(Tache.objects.filter(type="appel", contact=self.k).exists())
+        sequences.avancer(t0 + timedelta(days=9, minutes=3))  # J+9 : relance automatique
+        m2 = Message.objects.filter(inscription=ins).exclude(pk=m1.pk).get()
+        self.assertEqual(m2.statut, "programme")
+        self.assertEqual(m2.en_reponse_a, Message.objects.get(pk=m1.pk).message_id)
+
+    def test_opposition_et_plafond_au_dernier_moment(self):
+        m = Message.objects.create(compte=self.c, contact=self.k, boite=self.boite, destinataire=self.k.email, objet="x", corps="y", statut="programme", prevu_le=timezone.now())
+        rgpd.enregistrer_opposition(self.k.email)
+        with self.assertRaises(messagerie.EnvoiImpossible):
+            messagerie.envoyer(m, connexion=FauxSMTP())
+        self.assertEqual(Message.objects.get(pk=m.pk).statut, "annule")
+        self.boite.plafond_jour = 0
+        self.boite.save()
+        autre = Contact.objects.create(compte=self.c, nom="Autre", email="autre@x.example")
+        m2 = Message.objects.create(compte=self.c, contact=autre, boite=self.boite, destinataire=autre.email, objet="x", corps="y", statut="programme")
+        with self.assertRaisesMessage(messagerie.EnvoiImpossible, "Plafond"):
+            messagerie.envoyer(m2, connexion=FauxSMTP())
+
+    def test_envoi_reel(self):
+        p = Parametres.get()
+        p.mode_test = False
+        p.save()
+        m = Message.objects.create(compte=self.c, contact=self.k, boite=self.boite, destinataire=self.k.email, objet="Bonjour", corps="Texte", statut="programme")
+        smtp = FauxSMTP()
+        messagerie.envoyer(m, connexion=smtp)
+        self.assertEqual(smtp.envoyes[0]["To"], self.k.email)
+        self.k.refresh_from_db()
+        self.assertIsNotNone(self.k.informe_le)
+
+    def _reponse(self, texte, objet="RE: Formation", en_reponse_a="", expediteur=None, entetes=""):
+        brut = (f"From: Claire Vasseur <{expediteur or self.k.email}>\r\nTo: julie@formast.example\r\nSubject: {objet}\r\n"
+                f"Message-ID: <rep{Message.objects.count()}@client.example>\r\n" + (f"In-Reply-To: {en_reponse_a}\r\n" if en_reponse_a else "") + entetes +
+                "Content-Type: text/plain; charset=utf-8\r\n\r\n" + texte).encode("utf-8")
+        return reponses.enregistrer(self.boite, brut)
+
+    def test_reponse_interessee_arrete_la_sequence(self):
+        ins = sequences.inscrire(self.seq, self.k, self.u)
+        envoye = Message.objects.create(compte=self.c, contact=self.k, boite=self.boite, inscription=ins, destinataire=self.k.email, objet="x", corps="y",
+                                        statut="envoye", message_id="<orig@formast.example>")
+        r = self._reponse("Bonjour, oui cela nous intéresse, appelez-moi jeudi.\n\n> message d'origine", en_reponse_a="<orig@formast.example>")
+        self.assertEqual((r.classe, r.en_reponse_a), ("interesse", envoye.message_id))
+        ins.refresh_from_db()
+        self.c.refresh_from_db()
+        self.assertEqual((ins.statut, self.c.statut), ("arretee", "A répondu"))
+        self.assertTrue(Tache.objects.filter(titre__startswith="Rappeler").exists())
+
+    def test_reponses_automatiques(self):
+        ins = sequences.inscrire(self.seq, self.k, self.u)
+        r = self._reponse("Je suis absent jusqu'au 25/11 inclus.", objet="Réponse automatique", entetes="Auto-Submitted: auto-replied\r\n")
+        self.assertEqual(r.classe, "absence")
+        ins.refresh_from_db()
+        self.assertEqual(ins.statut, "pause")
+        r2 = self._reponse("Merci de ne plus m'écrire.")
+        self.assertEqual(r2.classe, "opposition")
+        self.assertTrue(rgpd.est_oppose(self.k.email))
+        self.assertIsNone(self._reponse("Bonjour", expediteur="inconnu@ailleurs.example"))  # sans rapport : ignoré
+
+    def test_classement_et_date_de_reprise(self):
+        self.assertEqual(reponses.classer("Pas pour le moment, revenez vers moi en mars.")[0], "pas_maintenant")
+        self.assertEqual(reponses.date_reprise("revenez en mars", date(2026, 11, 18)), date(2027, 3, 1))
+        self.assertEqual(reponses.classer("Voyez avec M. Perrin, notre responsable sécurité.")[0], "mauvais_interlocuteur")
+        self.assertEqual(reponses.classer("Nous travaillons déjà avec un organisme.")[0], "deja_equipe")
+        self.assertEqual(reponses.classer("STOP")[0], "opposition")
+        self.assertEqual(reponses.classer("Merci pour votre message.")[0], "autre")
+
+    def test_ecrans(self):
+        self.client.force_login(self.u)
+        for url in ["/prospection/sequences/", f"/prospection/sequences/{self.seq.pk}/", "/prospection/messagerie/", "/prospection/reponses/",
+                    "/prospection/statistiques/", "/prospection/prospects/?affichage=colonnes", f"/prospection/compte/{self.c.pk}/"]:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+        self.assertContains(self.client.get("/prospection/"), "Forma Prospect")
+        r = self.client.post("/prospection/sequences/inscrire/", {"sequence": self.seq.pk, "compte": [self.c.pk], "retour": "/prospection/prospects/"})
+        self.assertRedirects(r, "/prospection/prospects/", fetch_redirect_response=False)
+        self.assertTrue(Inscription.objects.filter(contact=self.k, statut="active").exists())
+        self.client.post(f"/prospection/compte/{self.c.pk}/envoyer/", {"contact_id": self.k.pk, "objet": "Bonjour", "texte": "Texte\n[Prénom Nom]", "relance": "5"})
+        m = Message.objects.get(objet="Bonjour")
+        self.assertEqual(m.statut, "programme")
+        self.client.post("/prospection/messagerie/", {"action": "annuler", "message_id": m.pk})
+        self.assertEqual(Message.objects.get(pk=m.pk).statut, "annule")
+        with mock.patch("prospection.services.messagerie._smtp") as s:
+            s.return_value.__enter__.return_value = FauxSMTP()
+            m3 = Message.objects.create(compte=self.c, contact=self.k, boite=self.boite, destinataire=self.k.email, objet="À valider", corps="z")
+            self.client.post("/prospection/messagerie/", {"action": "envoyer", "message_id": m3.pk, "objet": "À valider", "corps": "z"})
+        self.assertEqual(Message.objects.get(pk=m3.pk).statut, "envoye")

@@ -30,6 +30,14 @@ class Parametres(models.Model):
     linkedin_invitations_semaine = models.PositiveSmallIntegerField("Invitations LinkedIn max. par semaine", default=50)
     linkedin_profils_jour = models.PositiveSmallIntegerField("Profils LinkedIn consultés max. par jour", default=30)
 
+    mode_test = models.BooleanField(
+        "Messagerie en mode test", default=True,
+        help_text="Tous les e-mails partent vers l'adresse de test au lieu des prospects. À décocher pour envoyer pour de vrai.",
+    )
+    adresse_test = models.EmailField("Adresse de test", blank=True)
+    plages_envoi = models.CharField("Plages d'envoi", max_length=60, default="08:30-11:30,14:00-17:00",
+                                    help_text="Heures de Paris, jours ouvrés uniquement.")
+
     class Meta:
         verbose_name = "paramètres"
         verbose_name_plural = "paramètres"
@@ -415,3 +423,130 @@ class Prestation(models.Model):
 
     def __str__(self):
         return self.intitule
+
+
+
+# ---------------------------------------------------------------- Phase 2 : messagerie et séquences
+
+
+class BoiteEnvoi(models.Model):
+    """Boîte d'envoi (SMTP) et de relève des réponses (IMAP). Mots de passe : comptes dédiés, mots de passe d'application."""
+
+    nom = models.CharField(max_length=80, help_text="Ex. « Julie – prospection »")
+    adresse = models.EmailField(unique=True)
+    nom_affiche = models.CharField("Nom affiché", max_length=120, blank=True)
+    utilisateur = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="boites_envoi")
+    smtp_hote = models.CharField("Serveur SMTP", max_length=120)
+    smtp_port = models.PositiveIntegerField(default=587)
+    smtp_securite = models.CharField(max_length=8, choices=[("starttls", "STARTTLS (587)"), ("ssl", "SSL (465)"), ("aucune", "Aucune")], default="starttls")
+    smtp_identifiant = models.CharField(max_length=150, blank=True)
+    smtp_mot_de_passe = models.CharField(max_length=200, blank=True)
+    imap_hote = models.CharField("Serveur IMAP (réponses)", max_length=120, blank=True)
+    imap_port = models.PositiveIntegerField(default=993)
+    imap_identifiant = models.CharField(max_length=150, blank=True)
+    imap_mot_de_passe = models.CharField(max_length=200, blank=True)
+    imap_dernier_uid = models.PositiveIntegerField(default=0, editable=False)
+    plafond_jour = models.PositiveSmallIntegerField("Envois max. par jour", default=40)
+    signature = models.TextField(blank=True, help_text="Remplace [Prénom Nom] et [Téléphone] dans les messages.")
+    actif = models.BooleanField(default=True)
+    derniere_erreur = models.TextField(blank=True, editable=False)
+
+    class Meta:
+        verbose_name = "boîte d'envoi"
+        verbose_name_plural = "boîtes d'envoi"
+
+    def __str__(self):
+        return f"{self.nom} <{self.adresse}>"
+
+    def envoyes_aujourd_hui(self) -> int:
+        debut = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        return self.messages.filter(sens="sortant", statut="envoye", envoye_le__gte=debut).count()
+
+
+class Sequence(models.Model):
+    MODES = [("brouillon", "Chaque e-mail validé"), ("premier", "Premier e-mail validé, la suite automatique"), ("auto", "Tout automatique (modèles validés)")]
+    nom = models.CharField(max_length=120)
+    description = models.CharField(max_length=255, blank=True)
+    mode_validation = models.CharField(max_length=10, choices=MODES, default="premier")
+    actif = models.BooleanField(default=True)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nom"]
+
+    def __str__(self):
+        return self.nom
+
+
+class EtapeSequence(models.Model):
+    TYPES = [("email", "E-mail"), ("linkedin", "Tâche LinkedIn"), ("appel", "Appel"), ("tache", "Tâche libre")]
+    sequence = models.ForeignKey(Sequence, on_delete=models.CASCADE, related_name="etapes")
+    ordre = models.PositiveSmallIntegerField(default=1)
+    type = models.CharField(max_length=10, choices=TYPES, default="email")
+    delai_jours = models.PositiveSmallIntegerField("Jours après l'étape précédente", default=0)
+    canal_redaction = models.CharField(max_length=10, choices=[("email", "Premier e-mail"), ("relance", "Relance")], default="email",
+                                       help_text="Texte proposé par l'outil si l'objet et le corps sont vides.")
+    objet = models.CharField(max_length=200, blank=True, help_text="Variables : {entreprise}, {prenom}, {nom}, {besoin_sst}, {signal}")
+    corps = models.TextField(blank=True, help_text="Vide = texte rédigé par l'outil pour chaque prospect, à partir de sa fiche.")
+    intitule = models.CharField("Intitulé de la tâche", max_length=200, blank=True)
+
+    class Meta:
+        ordering = ["sequence", "ordre"]
+
+    def __str__(self):
+        return f"{self.sequence} · étape {self.ordre} ({self.get_type_display()})"
+
+
+class Inscription(models.Model):
+    STATUTS = [("active", "Active"), ("pause", "En pause"), ("terminee", "Terminée"), ("arretee", "Arrêtée")]
+    sequence = models.ForeignKey(Sequence, on_delete=models.CASCADE, related_name="inscriptions")
+    contact = models.ForeignKey(Contact, on_delete=models.CASCADE, related_name="inscriptions")
+    etape_suivante = models.PositiveSmallIntegerField(default=1)
+    statut = models.CharField(max_length=10, choices=STATUTS, default="active")
+    prochaine_le = models.DateTimeField(default=timezone.now)
+    motif_arret = models.CharField(max_length=200, blank=True)
+    inscrit_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    boite = models.ForeignKey(BoiteEnvoi, null=True, blank=True, on_delete=models.SET_NULL)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-cree_le"]
+
+    def __str__(self):
+        return f"{self.contact} · {self.sequence}"
+
+
+class Message(models.Model):
+    STATUTS = [("a_valider", "À valider"), ("programme", "Programmé"), ("envoi", "Envoi en cours"), ("envoye", "Envoyé"),
+               ("erreur", "Erreur"), ("annule", "Annulé"), ("recu", "Reçu")]
+    CLASSES = [("interesse", "Intéressé"), ("pas_maintenant", "Pas maintenant"), ("mauvais_interlocuteur", "Mauvais interlocuteur"),
+               ("deja_equipe", "Déjà équipé"), ("absence", "Absence"), ("opposition", "Opposition"), ("rebond", "Rebond"), ("autre", "À lire")]
+    compte = models.ForeignKey(Compte, null=True, blank=True, on_delete=models.CASCADE, related_name="messages")
+    contact = models.ForeignKey(Contact, null=True, blank=True, on_delete=models.SET_NULL, related_name="messages")
+    boite = models.ForeignKey(BoiteEnvoi, null=True, blank=True, on_delete=models.SET_NULL, related_name="messages")
+    inscription = models.ForeignKey(Inscription, null=True, blank=True, on_delete=models.SET_NULL, related_name="messages")
+    sens = models.CharField(max_length=8, choices=[("sortant", "Envoyé"), ("entrant", "Reçu")], default="sortant")
+    destinataire = models.EmailField(blank=True)
+    expediteur = models.CharField(max_length=255, blank=True)
+    objet = models.CharField(max_length=255)
+    corps = models.TextField()
+    statut = models.CharField(max_length=10, choices=STATUTS, default="a_valider")
+    prevu_le = models.DateTimeField(null=True, blank=True)
+    envoye_le = models.DateTimeField(null=True, blank=True)
+    message_id = models.CharField(max_length=255, blank=True, db_index=True)
+    en_reponse_a = models.CharField(max_length=255, blank=True)
+    redirige_test = models.BooleanField(default=False)
+    erreur = models.TextField(blank=True)
+    note_qualite = models.PositiveSmallIntegerField(null=True, blank=True)
+    valide_par = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    classe = models.CharField(max_length=25, choices=CLASSES, blank=True)
+    confiance = models.PositiveSmallIntegerField(null=True, blank=True)
+    date_reprise = models.DateField(null=True, blank=True)
+    traite = models.BooleanField(default=False)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-cree_le"]
+
+    def __str__(self):
+        return f"{self.get_sens_display()} · {self.objet}"

@@ -2,8 +2,8 @@
 {% block titre %}Prospects{% endblock %}
 {% block contenu %}
 <div class="top"><div class="t"><h1>Prospects</h1><div class="sub">{{ comptes|length }} résultat{{ comptes|length|pluralize }} · triés par score</div></div>
-<div class="row"><a class="btn sec" href="{% url 'prospection:import' %}">Importer</a><a class="btn" href="{% url 'prospection:compte_nouveau' %}">Nouveau prospect</a></div></div>
-<div class="views" role="group" aria-label="Vues enregistrées">{% for k, l in vues %}<a href="?vue={{ k }}" class="{% if vue == k %}on{% endif %}">{{ l }}</a>{% endfor %}</div>
+<div class="row"><div class="seg-ctl"><a href="?{{ qs_sans_affichage }}" {% if affichage != 'colonnes' %}style="background:var(--accent);color:var(--accent-fg)"{% endif %}>Liste</a><a href="?{{ qs_sans_affichage }}&affichage=colonnes" {% if affichage == 'colonnes' %}style="background:var(--accent);color:var(--accent-fg)"{% endif %}>Colonnes</a></div><a class="btn sec" href="{% url 'prospection:import' %}">Importer</a><a class="btn" href="{% url 'prospection:compte_nouveau' %}">Nouveau prospect</a></div></div>
+<div class="views" role="group" aria-label="Vues enregistrées">{% for k, l in vues %}<a href="?vue={{ k }}{% if affichage %}&affichage={{ affichage }}{% endif %}" class="{% if vue == k %}on{% endif %}">{{ l }}</a>{% endfor %}</div>
 <form class="card row" method="get">
   <input type="hidden" name="vue" value="{{ vue }}">
   <input type="text" name="q" placeholder="Nom, ville, NAF, SIREN, contact…" value="{{ g.q|default:'' }}" style="flex:1;min-width:180px">
@@ -13,9 +13,19 @@
   <select name="statut"><option value="">Tous statuts actifs</option>{% for s in statuts %}<option {% if g.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
   <button class="btn sec">Filtrer</button>
 </form>
-<div class="tw"><table><thead><tr><th>Prospect</th><th class="hide-m">Segment</th><th>Score</th><th>Signal principal</th><th class="hide-m">Contact</th><th>Statut</th></tr></thead><tbody>
+{% if affichage == 'colonnes' %}
+<div class="kb">{% for st, cartes in colonnes %}<div class="kcol" data-statut="{{ st }}"><h3><span>{{ st }}</span><span>{{ cartes|length }}</span></h3>
+  {% for c in cartes %}<a class="kc" draggable="true" data-id="{{ c.pk }}" href="{% url 'prospection:compte' c.pk %}"><span class="row between" style="flex-wrap:nowrap"><b class="small">{{ c.nom }}</b><span class="tier {{ c.palier }}">{{ c.palier }}</span></span>
+    <span class="small muted">{{ c.ville|default:"?" }} · {{ c.effectif }} sal. · score {{ c.score }}</span>{% with g2=c.signal_principal %}{% if g2 %}<span class="small">{{ g2.type|signal_libelle }}</span>{% endif %}{% endwith %}</a>
+  {% empty %}<span class="small muted" style="padding:4px">Déposez une carte ici</span>{% endfor %}</div>{% endfor %}</div>
+<p class="small muted">Glissez une carte pour changer son statut. Client, Pas maintenant, Écarté et Opposé restent dans la vue Liste.</p>
+<form id="kb-form" method="post" hidden>{% csrf_token %}<input type="hidden" name="action" value="statut"><input type="hidden" name="statut"><input type="hidden" name="retour" value="{{ request.get_full_path }}"></form>
+{% else %}
+<form method="post" action="{% url 'prospection:inscrire' %}" id="selection">{% csrf_token %}<input type="hidden" name="retour" value="{{ request.get_full_path }}">
+<div class="confirm row between" id="barre-selection" hidden><span><b id="nb-sel">0</b> sélectionné(s)</span><div class="row"><select name="sequence">{% for s in sequences %}<option value="{{ s.pk }}">{{ s.nom }}</option>{% endfor %}</select><button class="btn sm">Inscrire en séquence</button></div></div>
+<div class="tw"><table><thead><tr><th><input type="checkbox" id="tout" aria-label="Tout sélectionner"></th><th>Prospect</th><th class="hide-m">Segment</th><th>Score</th><th>Signal principal</th><th class="hide-m">Contact</th><th>Statut</th></tr></thead><tbody>
 {% for c in comptes %}{% with g2=c.signal_principal k=c.contact_principal %}
-<tr class="click" data-href="{% url 'prospection:compte' c.pk %}?liste=1&{{ request.GET.urlencode }}">
+<tr class="click" data-href="{% url 'prospection:compte' c.pk %}?liste=1&{{ request.GET.urlencode }}"><td><input type="checkbox" name="compte" value="{{ c.pk }}" class="sel" aria-label="Sélectionner {{ c.nom }}"></td>
   <td><a href="{% url 'prospection:compte' c.pk %}"><b>{{ c.nom }}</b></a><div class="small muted">{{ c.ville|default:"?" }}{% if c.departement %} ({{ c.departement }}){% endif %} · {{ c.effectif }} sal.{% if c.nb_etablissements > 1 %} · {{ c.nb_etablissements }} sites{% endif %}</div></td>
   <td class="hide-m small">{{ c.segment|segment_libelle }}</td>
   <td><div class="score"><span class="tier {{ c.palier }}">{{ c.palier }}</span><b>{{ c.score }}</b></div></td>
@@ -23,6 +33,20 @@
   <td class="hide-m small">{% if k %}{{ k.nom_complet }}<div class="muted">{{ k.fonction }}</div>{% else %}<span class="chip warn">à trouver</span>{% endif %}</td>
   <td><span class="chip {{ c.statut|classe_statut }}">{{ c.statut }}</span></td>
 </tr>{% endwith %}
-{% empty %}<tr><td colspan="6" class="muted">Aucun prospect. <a href="{% url 'prospection:import' %}">Importez un fichier</a> ou <a href="{% url 'prospection:compte_nouveau' %}">créez-en un</a>.</td></tr>{% endfor %}
-</tbody></table></div>
+{% empty %}<tr><td colspan="7" class="muted">Aucun prospect. <a href="{% url 'prospection:import' %}">Importez un fichier</a> ou <a href="{% url 'prospection:compte_nouveau' %}">créez-en un</a>.</td></tr>{% endfor %}
+</tbody></table></div></form>
+{% endif %}
 {% endblock %}
+{% block scripts %}<script>
+(function(){
+  var sel=document.querySelectorAll('.sel'), barre=document.getElementById('barre-selection'), nb=document.getElementById('nb-sel'), tout=document.getElementById('tout');
+  function maj(){var n=document.querySelectorAll('.sel:checked').length; if(barre){barre.hidden=!n; nb.textContent=n;}}
+  sel.forEach(function(c){c.addEventListener('change',maj)}); if(tout) tout.addEventListener('change',function(){sel.forEach(function(c){c.checked=tout.checked}); maj();});
+  var f=document.getElementById('kb-form');
+  document.querySelectorAll('.kc').forEach(function(k){k.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',k.dataset.id);k.classList.add('drag');});k.addEventListener('dragend',function(){k.classList.remove('drag')});});
+  document.querySelectorAll('.kcol').forEach(function(col){
+    col.addEventListener('dragover',function(e){e.preventDefault();col.classList.add('over')}); col.addEventListener('dragleave',function(){col.classList.remove('over')});
+    col.addEventListener('drop',function(e){e.preventDefault(); var id=e.dataTransfer.getData('text/plain'); if(!id||!f) return; f.action='/prospection/compte/'+id+'/action/'; f.statut.value=col.dataset.statut; f.submit();});
+  });
+})();
+</script>{% endblock %}

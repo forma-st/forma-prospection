@@ -1,9 +1,9 @@
-{% load static %}<!doctype html>
+{% load static prospection_tags %}<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block titre %}Prospection{% endblock %} · FORMA'ST</title>
+<title>{% block titre %}Forma Prospect{% endblock %} · Forma Prospect</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="{% static 'prospection/app.css' %}">
@@ -12,32 +12,38 @@
 <body>
 <div class="app">
   <nav class="nav" aria-label="Navigation principale">
-    <div class="brand"><b>Prospection</b><span>FORMA'ST · outil interne</span></div>
-    <div class="grp">Au quotidien</div>
+    <div class="brand"><b>Forma Prospect</b><span>FORMA'ST · outil interne</span></div>
     {% with n=request.resolver_match.url_name %}
-    <a href="{% url 'prospection:journee' %}" class="{% if n == 'journee' %}on{% endif %}"><span>Ma journée</span></a>
-    <a href="{% url 'prospection:prospects' %}" class="{% if n == 'prospects' or n == 'compte' or n == 'compte_nouveau' %}on{% endif %}"><span>Prospects</span></a>
-    <a href="{% url 'prospection:taches' %}" class="{% if n == 'taches' %}on{% endif %}"><span>Tâches</span>{% if nb_taches %}<span class="badge">{{ nb_taches }}</span>{% endif %}</a>
-    <a href="{% url 'prospection:historique' %}" class="{% if n == 'historique' %}on{% endif %}"><span>Historique des formations</span>{% if nb_relances %}<span class="badge">{{ nb_relances }}</span>{% endif %}</a>
-    {% if linkedin_actif %}<a href="{% url 'prospection:linkedin' %}" class="{% if n == 'linkedin' %}on{% endif %}"><span>LinkedIn</span></a>{% endif %}
+    <div class="grp">Au quotidien</div>
+    <a href="{% url 'prospection:journee' %}" class="{% if n == 'journee' %}on{% endif %}"><span class="lbl">{% icone 'journee' %}<span>Ma journée</span></span></a>
+    <a href="{% url 'prospection:prospects' %}" class="{% if n == 'prospects' or n == 'compte' or n == 'compte_nouveau' %}on{% endif %}"><span class="lbl">{% icone 'prospects' %}<span>Prospects</span></span></a>
+    <a href="{% url 'prospection:taches' %}" class="{% if n == 'taches' %}on{% endif %}"><span class="lbl">{% icone 'taches' %}<span>Tâches</span></span>{% if nb_taches %}<span class="badge">{{ nb_taches }}</span>{% endif %}</a>
+    <a href="{% url 'prospection:reponses' %}" class="{% if n == 'reponses' %}on{% endif %}"><span class="lbl">{% icone 'reponses' %}<span>Réponses</span></span>{% if nb_reponses %}<span class="badge">{{ nb_reponses }}</span>{% endif %}</a>
+    <a href="{% url 'prospection:statistiques' %}" class="{% if n == 'statistiques' %}on{% endif %}"><span class="lbl">{% icone 'stats' %}<span>Statistiques</span></span></a>
     <div class="grp">Alimenter</div>
-    <a href="{% url 'prospection:import' %}" class="{% if n == 'import' or n == 'import_detail' %}on{% endif %}"><span>Import de fichiers</span></a>
+    <a href="{% url 'prospection:import' %}" class="{% if n == 'import' or n == 'import_detail' %}on{% endif %}"><span class="lbl">{% icone 'import' %}<span>Import de fichiers</span></span></a>
+    <a href="{% url 'prospection:historique' %}" class="{% if n == 'historique' %}on{% endif %}"><span class="lbl">{% icone 'historique' %}<span>Historique des formations</span></span>{% if nb_relances %}<span class="badge">{{ nb_relances }}</span>{% endif %}</a>
+    <div class="grp">Contacter</div>
+    <a href="{% url 'prospection:sequences' %}" class="{% if n == 'sequences' or n == 'sequence' %}on{% endif %}"><span class="lbl">{% icone 'sequences' %}<span>Séquences</span></span></a>
+    <a href="{% url 'prospection:messagerie' %}" class="{% if n == 'messagerie' %}on{% endif %}"><span class="lbl">{% icone 'messagerie' %}<span>Messagerie</span></span>{% if nb_a_valider %}<span class="badge">{{ nb_a_valider }}</span>{% endif %}</a>
+    {% if linkedin_actif %}<a href="{% url 'prospection:linkedin' %}" class="{% if n == 'linkedin' %}on{% endif %}"><span class="lbl">{% icone 'linkedin' %}<span>LinkedIn</span></span></a>{% endif %}
     <div class="grp">Réglages</div>
-    <a href="{% url 'prospection:oppositions' %}" class="{% if n == 'oppositions' %}on{% endif %}"><span>Opposition (RGPD)</span></a>
-    {% if user.is_staff %}<a href="{% url 'admin:prospection_parametres_change' 1 %}"><span>Paramètres</span></a>
-    <a href="{% url 'admin:prospection_prestation_changelist' %}"><span>Catalogue et profil</span></a>
-    <a href="{% url 'admin:auth_user_changelist' %}"><span>Utilisateurs</span></a>{% endif %}
-    {% if formao_url %}<a href="{{ formao_url }}/" target="_blank" rel="noopener"><span>Ouvrir FORM'AO ↗</span></a>{% endif %}
+    <a href="{% url 'prospection:oppositions' %}" class="{% if n == 'oppositions' %}on{% endif %}"><span class="lbl">{% icone 'opposition' %}<span>Opposition (RGPD)</span></span></a>
+    {% if user.is_staff %}<a href="{% url 'admin:prospection_parametres_change' 1 %}"><span class="lbl">{% icone 'parametres' %}<span>Paramètres</span></span></a>
+    <a href="{% url 'admin:prospection_prestation_changelist' %}"><span class="lbl">{% icone 'catalogue' %}<span>Catalogue et profil</span></span></a>
+    <a href="{% url 'admin:auth_user_changelist' %}"><span class="lbl">{% icone 'utilisateurs' %}<span>Utilisateurs</span></span></a>{% endif %}
+    {% if formao_url %}<a href="{{ formao_url }}/" target="_blank" rel="noopener"><span class="lbl">{% icone 'lien' %}<span>Ouvrir FORM'AO ↗</span></span></a>{% endif %}
     {% endwith %}
-    <div class="foot"><kbd>/</kbd> rechercher · <kbd>J</kbd> <kbd>K</kbd> fiche suivante / précédente</div>
+    <div class="foot"><kbd>Ctrl</kbd> <kbd>K</kbd> ou <kbd>/</kbd> rechercher · <kbd>J</kbd> <kbd>K</kbd> fiche suivante / précédente</div>
   </nav>
   <main class="main"><div class="wrap">
     <div class="topbar">
       <form class="search" action="{% url 'prospection:prospects' %}" method="get" role="search">
-        <span class="muted" aria-hidden="true">⌕</span><input type="search" name="q" id="recherche" placeholder="Rechercher un prospect, une ville, un SIREN…" value="{{ g.q|default:'' }}"><kbd>/</kbd>
+        <span class="muted">{% icone 'recherche' %}</span><input type="search" name="q" id="recherche" placeholder="Rechercher un prospect, une ville, un SIREN…" value="{{ g.q|default:'' }}"><kbd>Ctrl K</kbd>
       </form>
       <div class="row" style="flex-wrap:nowrap">
-        <button class="iconbtn" type="button" id="theme" aria-label="Changer de thème" title="Thème clair / sombre">◐</button>
+        <button class="iconbtn" type="button" id="theme" aria-label="Changer de thème" title="Thème clair / sombre">{% icone 'theme' %}</button>
+        {% if mode_test %}<a class="chip warn" href="{% url 'prospection:messagerie' %}" title="Les e-mails partent vers l'adresse de test">Mode test</a>{% endif %}
         <span class="avatar" title="{{ user.get_full_name|default:user.username }}">{{ user.username|slice:":2" }}</span>
         <form method="post" action="{% url 'deconnexion' %}" style="margin:0">{% csrf_token %}<button class="btn sm ghost" title="Se déconnecter">Déconnexion</button></form>
       </div>
@@ -48,7 +54,7 @@
 </div>
 <script>
 document.getElementById('theme').addEventListener('click',function(){var r=document.documentElement;var d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=d?'light':'dark';try{localStorage.setItem('pm-theme',r.dataset.theme)}catch(e){}});
-document.addEventListener('keydown',function(e){var t=(document.activeElement||{}).tagName||'';if(/INPUT|TEXTAREA|SELECT/.test(t))return;if(e.key==='/'){e.preventDefault();document.getElementById('recherche').focus();}
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();var r=document.getElementById('recherche');r.focus();r.select();return;}var t=(document.activeElement||{}).tagName||'';if(/INPUT|TEXTAREA|SELECT/.test(t))return;if(e.key==='/'){e.preventDefault();document.getElementById('recherche').focus();}
  var n=document.querySelector('[data-nav="'+e.key+'"]');if(n&&(e.key==='j'||e.key==='k'))location.href=n.href;});
 document.querySelectorAll('tr[data-href]').forEach(function(tr){tr.addEventListener('click',function(e){if(e.target.closest('a,button,input,form'))return;location.href=tr.dataset.href;});});
 document.querySelectorAll('[data-copier]').forEach(function(b){b.addEventListener('click',function(){var el=document.getElementById(b.dataset.copier);var v=el.value!==undefined?el.value:el.textContent;(navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(function(){b.textContent='Copié';setTimeout(function(){b.textContent=b.dataset.libelle||'Copier'},1500)}).catch(function(){if(el.select)el.select();});});});

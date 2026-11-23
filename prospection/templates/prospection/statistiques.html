@@ -1,0 +1,21 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Statistiques{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Statistiques</h1><div class="sub">30 derniers jours pour les e-mails ; état actuel pour les prospects</div></div></div>
+<div class="kpis">
+  <div class="kpi"><span class="l">Prospects actifs</span><span class="v">{{ nb_actifs }}</span></div>
+  <div class="kpi"><span class="l">Palier A</span><span class="v">{{ nb_a }}</span></div>
+  <div class="kpi"><span class="l">E-mails envoyés (30 j)</span><span class="v">{{ envoyes }}</span></div>
+  <div class="kpi"><span class="l">Réponses (30 j)</span><span class="v">{{ recus }}</span></div>
+  <div class="kpi"><span class="l">Taux de réponse</span><span class="v">{{ taux_reponse }} %</span><span class="small muted">prospects contactés qui ont répondu</span></div>
+  <div class="kpi"><span class="l">RDV en cours</span><span class="v">{{ rdv }}</span><span class="small muted">{{ taux_rdv }} % des réponses</span></div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2>Entonnoir</h2><div class="funnel">{% for s, n, w in entonnoir %}<div class="fr"><span>{{ s }}</span><div><div class="fb" style="width:{{ w|default:1 }}%"></div></div><b>{{ n }}</b></div>{% endfor %}</div></div>
+  <div class="card"><h2>Réponses par type (30 j)</h2><div class="list">{% for l, n in classes %}<div class="li"><div class="grow">{{ l }}</div><b>{{ n }}</b></div>{% empty %}<p class="small muted">Aucune réponse.</p>{% endfor %}</div>
+    <h3 style="margin-top:12px">Prospects par palier</h3><div class="row" style="margin-top:6px">{% for p, n in par_palier %}<span class="tier {{ p }}">{{ p }}</span> <b>{{ n }}</b>&nbsp;&nbsp;{% endfor %}</div></div>
+</div>
+<div class="card"><h2>Rendement des sources</h2><div class="tw"><table><thead><tr><th>Source</th><th>Prospects</th><th>Ont répondu</th><th>RDV et au-delà</th></tr></thead><tbody>
+{% for x in par_source %}<tr><td>{{ x.source|default:"(sans source)" }}</td><td>{{ x.n }}</td><td>{{ x.rep }}</td><td>{{ x.rdv }}</td></tr>{% empty %}<tr><td colspan="4" class="muted">Aucune donnée.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

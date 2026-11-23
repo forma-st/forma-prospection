@@ -1,12 +1,12 @@
 {% load static %}<!doctype html>
 <html lang="fr">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connexion · Prospection FORMA'ST</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Connexion · Forma Prospect</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="{% static 'prospection/app.css' %}">
 <script>try{var t=localStorage.getItem('pm-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script></head>
 <body><main style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px">
 <form method="post" class="card grid" style="gap:12px;width:min(380px,100%)">{% csrf_token %}
-  <div><h1 style="color:var(--accent)">Prospection</h1><div class="sub">FORMA'ST · outil interne</div></div>
+  <div><h1 style="color:var(--accent)">Forma Prospect</h1><div class="sub">FORMA'ST · outil interne</div></div>
   {% if form.errors %}<ul class="messages"><li class="error">Identifiant ou mot de passe incorrect.</li></ul>{% endif %}
   <label class="f">Identifiant<input type="text" name="username" autofocus required autocomplete="username"></label>
   <label class="f">Mot de passe<input type="password" name="password" required autocomplete="current-password" style="padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface)"></label>

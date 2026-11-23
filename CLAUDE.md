@@ -1,4 +1,4 @@
-# Outil Prospection FORMA'ST — consignes pour Claude Code
+# Forma Prospect (FORMA'ST) — consignes pour Claude Code
 
 - Outil **interne et propriétaire** d'aide à la prospection, **indépendant de FORM'AO**. Ne jamais importer de code de FORM'AO : le seul lien est l'API décrite dans `docs/API_FORMAO.md`, facultative, en lecture seule (`prospection/services/formao.py`).
 - Hors périmètre : devis, facturation et trésorerie (outil existant relié à Penny Line) ; planning et charge des formateurs (Planif ST) ; veille des AO (FORM'AO).

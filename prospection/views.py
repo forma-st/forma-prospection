@@ -35,7 +35,10 @@ VUES = [("tous", "Tous"), ("A", "Palier A"), ("signaux", "Avec signal"), ("sansc
 def _ctx(request, **kw):
     p = Parametres.get()
     kw.setdefault("parametres", p)
-    kw["nb_reponses"] = 0
+    from .models import Message
+    kw["nb_reponses"] = Message.objects.filter(sens="entrant", traite=False).count()
+    kw["nb_a_valider"] = Message.objects.filter(sens="sortant", statut="a_valider").count()
+    kw["mode_test"] = p.mode_test
     kw["nb_taches"] = Tache.objects.filter(faite_le__isnull=True, echeance__lte=timezone.localdate()).count()
     kw["nb_relances"] = sum(1 for h in HistoriqueFormation.objects.filter(relance_creee=False) if h.etat != "ok")
     kw["linkedin_actif"] = p.linkedin_actif
@@ -103,9 +106,15 @@ def _filtrer(request):
 @login_required
 def prospects(request):
     comptes, vue = _filtrer(request)
+    from .models import Sequence
     deps = sorted(d for d in Compte.objects.values_list("departement", flat=True).distinct() if d)
+    affichage = request.GET.get("affichage", "")
+    q = request.GET.copy()
+    q.pop("affichage", None)
+    colonnes = [(st, [c for c in comptes if c.statut == st]) for st in ["Nouveau", "À qualifier", "À contacter", "En contact", "A répondu", "RDV fixé", "Transmis au CRM"]]
     return render(request, "prospection/prospects.html", _ctx(
         request, comptes=comptes, vue=vue, vues=VUES, segments=regles.SEGMENT_CHOICES, statuts=regles.STATUTS, departements=deps, g=request.GET,
+        affichage=affichage, qs_sans_affichage=q.urlencode(), colonnes=colonnes, sequences=Sequence.objects.filter(actif=True),
     ))
 
 
@@ -160,6 +169,9 @@ def compte(request, pk):
         suivant=ids[i + 1] if 0 <= i < len(ids) - 1 else None, position=i + 1, total=len(ids),
         oppose_email=bool(contact and contact.email and rgpd.est_oppose(contact.email)),
     )
+    from .models import Inscription, Sequence
+    ctx["sequences_dispo"] = Sequence.objects.filter(actif=True)
+    ctx["inscription_en_cours"] = Inscription.objects.filter(contact__compte=c, statut__in=["active", "pause"]).select_related("sequence", "contact").first()
     g = c.signal_principal()
     ctx["controle_info"] = {
         "canal": canal, "noms": [c.nom] + [x.nom_complet for x in c.contacts.all()],

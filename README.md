@@ -1,4 +1,4 @@
-# Prospection FORMA'ST — outil interne d'aide à la prospection
+# Forma Prospect — outil interne d'aide à la prospection de FORMA'ST
 
 Application **indépendante** de FORM'AO (suivi, veille et gestion des appels d'offres). Elle peut s'y relier de façon facultative pour le suivi commercial des acheteurs publics : voir [docs/API_FORMAO.md](docs/API_FORMAO.md).
 
@@ -20,6 +20,14 @@ Application **indépendante** de FORM'AO (suivi, veille et gestion des appels d'
   - contrôle de chaque ligne (doublons, SIRET, opposition, e-mails personnels), annulable pendant 30 jours ;
   - acheteurs publics de FORM'AO, si les deux outils sont reliés.
 - **Annuaire officiel des entreprises** : SIREN, NAF, effectif, établissements et IDCC, en un clic ou chaque matin.
+- **Séquences** (phase 2) : e-mails, appels et tâches LinkedIn enchaînés, avec arrêt automatique sur réponse, opposition, rebond ou RDV, et pause en cas d'absence. Quatre séquences sont livrées (ouverture de site, recrutement QSE, réactivation MAC SST, acheteur public).
+- **Messagerie** (phase 2) :
+  - boîtes d'envoi SMTP et relève IMAP ;
+  - file d'envoi avec validation, plafonds par boîte, plages horaires et jours ouvrés ;
+  - un message n'est jamais envoyé deux fois ;
+  - **mode test activé par défaut** : tout part vers votre adresse de test.
+- **Réponses** (phase 2) : tri automatique (intéressé, pas maintenant, mauvais interlocuteur, déjà équipé, absence, opposition, rebond), actions proposées, date de reprise détectée.
+- **Statistiques** : entonnoir, taux de réponse, réponses par type, rendement des sources.
 - **Historique des formations** : échéances (MAC SST à 24 mois, évacuation à 6 mois…) et relances.
 - **Tâches**, **liste d'opposition (RGPD)**, **catalogue et profil**, **paramètres du score**.
 - **Option LinkedIn**, désactivée par défaut :
@@ -56,6 +64,7 @@ DJANGO_DEBUG=1 .venv/bin/python manage.py migrate && DJANGO_DEBUG=1 .venv/bin/py
 | Commande | Rôle |
 |---|---|
 | `manage.py prospection_quotidienne --sirene` | Reprises, relances des formations à échéance, annuaire, scores (chaque matin) |
+| `manage.py prospection_envois` | Séquences, file d'envoi, relève des réponses (toutes les 5 minutes) |
 | `manage.py charger_demo_prospection` | Données fictives de démonstration (`--effacer` pour les retirer) |
 
 ## Documentation

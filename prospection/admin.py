@@ -1,8 +1,13 @@
 from django.contrib import admin
 
-from .models import (ActionLinkedIn, Activite, Compte, ConnexionLinkedIn, Contact, HistoriqueFormation, ImportFichier,
-                     Opposition, Parametres, Prestation, ProfilEntreprise, PublicationLinkedIn, Signal, Tache)
+from .models import (ActionLinkedIn, Activite, BoiteEnvoi, Compte, ConnexionLinkedIn, Contact, EtapeSequence, HistoriqueFormation, ImportFichier,
+                     Inscription, Message, Opposition, Parametres, Prestation, ProfilEntreprise, PublicationLinkedIn, Sequence, Signal, Tache)
 from .services.scoring import recalculer_tout
+
+admin.site.site_header = "Forma Prospect · paramètres"
+admin.site.site_title = "Forma Prospect"
+admin.site.index_title = "Paramètres et données"
+admin.site.site_url = "/prospection/"
 
 
 @admin.register(Parametres)
@@ -10,6 +15,7 @@ class ParametresAdmin(admin.ModelAdmin):
     fieldsets = [
         ("Score", {"fields": ["poids_adequation", "poids_intention", "poids_accessibilite", "seuil_palier_a", "seuil_palier_b",
                               "part_sst", "departements_prioritaires", "objectif_actions_jour"]}),
+        ("Messagerie", {"fields": ["mode_test", "adresse_test", "plages_envoi"]}),
         ("Option LinkedIn", {"fields": ["linkedin_actif", "linkedin_invitations_semaine", "linkedin_profils_jour"],
                              "description": "Connexion du compte et publication par l'API officielle ; invitations et messages "
                                             "toujours envoyés à la main. Renseignez aussi LINKEDIN_CLIENT_ID et LINKEDIN_CLIENT_SECRET dans le .env."}),
@@ -95,3 +101,29 @@ class ProfilEntrepriseAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+class EtapeInline(admin.TabularInline):
+    model = EtapeSequence
+    extra = 0
+
+
+@admin.register(Sequence)
+class SequenceAdmin(admin.ModelAdmin):
+    list_display = ["nom", "mode_validation", "actif"]
+    inlines = [EtapeInline]
+
+
+@admin.register(BoiteEnvoi)
+class BoiteEnvoiAdmin(admin.ModelAdmin):
+    list_display = ["nom", "adresse", "smtp_hote", "plafond_jour", "actif"]
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ["objet", "sens", "destinataire", "statut", "classe", "cree_le"]
+    list_filter = ["sens", "statut", "classe"]
+    search_fields = ["objet", "destinataire", "expediteur"]
+
+
+admin.site.register(Inscription)

@@ -1,0 +1,26 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Réponses{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Réponses</h1><div class="sub">Relevées toutes les 5 minutes et classées. Déjà fait automatiquement : séquence arrêtée, opposition appliquée, pause en cas d'absence.</div></div></div>
+<div class="grid g2a">
+  <div class="card"><div class="list">{% for x in liste %}<a class="li" href="?id={{ x.pk }}" style="text-decoration:none;color:var(--fg);{% if r and x.pk == r.pk %}background:var(--surface-2);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px{% endif %}">
+    <span class="dot {% if not x.traite %}info{% endif %}"></span><div class="grow"><div class="row between"><b>{{ x.contact|default:x.expediteur }}</b><span class="small muted">{{ x.cree_le|date:"d/m H:i" }}</span></div>
+    <div class="small">{{ x.compte.nom|default:"" }}</div><div class="row" style="margin-top:3px"><span class="chip {% if x.classe == 'interesse' %}ok{% elif x.classe == 'opposition' or x.classe == 'rebond' %}bad{% elif x.classe == 'autre' %}info{% else %}warn{% endif %}">{{ x.get_classe_display }} · {{ x.confiance }} %</span>{% if x.traite %}<span class="chip">traitée</span>{% endif %}</div></div></a>
+  {% empty %}<p class="muted">Aucune réponse pour l'instant. Elles arrivent ici dès qu'une boîte d'envoi a sa relève IMAP configurée.</p>{% endfor %}</div></div>
+  {% if r %}<div class="card"><div class="row between"><h2>{{ r.objet }}</h2><span class="chip">{{ r.get_classe_display }} · confiance {{ r.confiance }} %</span></div>
+    <p class="small muted">De {{ r.expediteur }}{% if r.compte %} · <a href="{% url 'prospection:compte' r.compte_id %}">{{ r.compte.nom }}</a>{% endif %} · {{ r.cree_le|date:"d/m/Y H:i" }}</p>
+    <div class="mail">{{ r.corps|truncatechars:4000 }}</div>
+    {% if origine %}<details style="margin-top:8px"><summary>Message d'origine : {{ origine.objet }}</summary><div class="mail small">{{ origine.corps|truncatechars:2000 }}</div></details>{% endif %}
+    <div class="grid" style="gap:8px;margin-top:12px">
+      <form method="post" class="row">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><input type="hidden" name="action" value="classer"><span class="small muted">Corriger le classement :</span>
+        <select name="classe">{% for k, l in classes %}<option value="{{ k }}" {% if k == r.classe %}selected{% endif %}>{{ l }}</option>{% endfor %}</select><button class="btn sm ghost">Appliquer</button></form>
+      {% if r.compte %}<div class="row">
+        <form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><button class="btn sm" name="action" value="rdv">RDV fixé</button></form>
+        <a class="btn sm sec" href="{% url 'prospection:compte' r.compte_id %}?canal=appel{% if r.contact %}&contact={{ r.contact_id }}{% endif %}">Préparer l'appel</a>
+        <form method="post" class="row">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><input type="hidden" name="action" value="reprise"><input type="date" name="date_reprise" value="{{ r.date_reprise|date:'Y-m-d' }}"><button class="btn sm sec">Reprendre à cette date</button></form></div>
+      <details {% if r.classe == 'mauvais_interlocuteur' %}open{% endif %}><summary>Ajouter le bon interlocuteur</summary><form method="post" class="row" style="margin-top:6px">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><input type="hidden" name="action" value="contact">
+        <input type="text" name="prenom" placeholder="Prénom"><input type="text" name="nom" placeholder="Nom" required><input type="text" name="fonction" placeholder="Fonction"><input type="email" name="email" placeholder="E-mail"><button class="btn sm sec">Ajouter</button></form></details>{% endif %}
+      <form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ r.pk }}"><button class="btn sm ghost" name="action" value="traite">{% if r.traite %}Marquer comme à traiter{% else %}Marquer comme traitée{% endif %}</button></form>
+    </div></div>{% endif %}
+</div>
+{% endblock %}

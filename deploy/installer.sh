@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installation interne de l'outil Prospection FORMA'ST sur un Mac ou un PC Linux du bureau.
+# Installation interne de Forma Prospect sur un Mac ou un PC Linux du bureau.
 # À lancer depuis le dossier de l'outil :  bash deploy/installer.sh [--demo] [--demarrage-auto]
 #   --demo            charge des prospects fictifs pour découvrir l'outil (retirables ensuite)
 #   --demarrage-auto  démarre l'outil à l'ouverture de session et lance le traitement chaque matin (7 h 40)
@@ -20,7 +20,7 @@ for a in "$@"; do
 done
 
 if [ ! -f manage.py ] || [ ! -f requirements.txt ] || [ ! -d prospection ]; then
-  echo "Ce script doit rester dans le dossier deploy/ d'une copie complète de l'outil Prospection."
+  echo "Ce script doit rester dans le dossier deploy/ d'une copie complète de Forma Prospect."
   echo "Dossier actuel : $RACINE (manage.py, requirements.txt ou prospection/ introuvable)."
   echo "Récupérez l'outil avec git (voir deploy/INSTALLATION.md), pas en copiant des fichiers avec le Finder."
   exit 1
@@ -159,22 +159,33 @@ PLIST
   <key>StandardOutPath</key><string>$RACINE/logs/matin.log</string><key>StandardErrorPath</key><string>$RACINE/logs/matin.log</string>
 </dict></plist>
 PLIST
-    for f in fr.formast.prospection fr.formast.prospection.matin; do
+    cat > "$AGENTS/fr.formast.prospection.envois.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>fr.formast.prospection.envois</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$RACINE/deploy/envois.sh</string></array>
+  <key>StartInterval</key><integer>300</integer>
+  <key>StandardOutPath</key><string>$RACINE/logs/envois.log</string><key>StandardErrorPath</key><string>$RACINE/logs/envois.log</string>
+</dict></plist>
+PLIST
+    for f in fr.formast.prospection fr.formast.prospection.matin fr.formast.prospection.envois; do
       launchctl bootout "gui/$(id -u)/$f" 2>/dev/null || true
       launchctl bootstrap "gui/$(id -u)" "$AGENTS/$f.plist"
     done
-    echo "    Lancé maintenant, et à chaque ouverture de session. Traitement chaque matin à 7 h 40 (Mac allumé)."
+    echo "    Lancé maintenant, et à chaque ouverture de session. Envois et réponses toutes les 5 minutes ; traitement du matin à 7 h 40 (Mac allumé)."
   else
     ( crontab -l 2>/dev/null | grep -v "$RACINE/deploy/" ; \
       echo "@reboot PORT=$PORT /bin/bash $RACINE/deploy/demarrer.sh >> $RACINE/logs/serveur.log 2>&1"; \
-      echo "40 7 * * * /bin/bash $RACINE/deploy/traitements_du_matin.sh >> $RACINE/logs/matin.log 2>&1" ) | crontab -
+      echo "40 7 * * * /bin/bash $RACINE/deploy/traitements_du_matin.sh >> $RACINE/logs/matin.log 2>&1"; \
+      echo "*/5 * * * * /bin/bash $RACINE/deploy/envois.sh >> $RACINE/logs/envois.log 2>&1" ) | crontab -
     nohup env PORT="$PORT" bash deploy/demarrer.sh >> logs/serveur.log 2>&1 &
-    echo "    Lancé maintenant, et à chaque redémarrage. Traitement chaque matin à 7 h 40."
+    echo "    Lancé maintenant, et à chaque redémarrage. Envois et réponses toutes les 5 minutes ; traitement du matin à 7 h 40."
   fi
 fi
 
 echo
-echo "Installation de l'outil Prospection terminée."
+echo "Installation de Forma Prospect terminée."
 echo "  Sur cet ordinateur :           http://localhost:$PORT/"
 [ -n "$IP_LOCALE" ] && echo "  Depuis le réseau du bureau :   http://$IP_LOCALE:$PORT/"
 [ "$AUTO" = "1" ] || echo "  Pour démarrer l'outil :        bash deploy/demarrer.sh"
