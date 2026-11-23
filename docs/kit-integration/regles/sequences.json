@@ -1,0 +1,117 @@
+{
+  "_note": "Séquences livrées (cahier §3.7). j = jour relatif, t = type d'étape. Statistiques retirées.",
+  "sequences": [
+    {
+      "id": 1,
+      "nom": "Ouverture de site",
+      "mode_validation": "Premier envoi validé",
+      "plafond_par_boite_jour": 40,
+      "etapes": [
+        {
+          "type": "email",
+          "jour": 0,
+          "intitule": "Accroche « ouverture de site » + besoin chiffré"
+        },
+        {
+          "type": "linkedin",
+          "jour": 2,
+          "intitule": "Invitation au décideur (texte préparé)"
+        },
+        {
+          "type": "appel",
+          "jour": 5,
+          "intitule": "Appel de découverte (script segment)"
+        },
+        {
+          "type": "email",
+          "jour": 9,
+          "intitule": "Preuve : référence comparable et UMFI"
+        },
+        {
+          "type": "email",
+          "jour": 16,
+          "intitule": "Message de fin, porte ouverte"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Recrutement QSE",
+      "mode_validation": "Premier envoi validé",
+      "plafond_par_boite_jour": 40,
+      "etapes": [
+        {
+          "type": "email",
+          "jour": 0,
+          "intitule": "Accroche « vous renforcez la prévention »"
+        },
+        {
+          "type": "linkedin",
+          "jour": 1,
+          "intitule": "Invitation au DRH"
+        },
+        {
+          "type": "email",
+          "jour": 6,
+          "intitule": "Contenu utile : check-list des formations obligatoires"
+        },
+        {
+          "type": "appel",
+          "jour": 12,
+          "intitule": "Appel au DRH"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Réactivation MAC SST",
+      "mode_validation": "Modèle validé (envoi automatique)",
+      "plafond_par_boite_jour": 40,
+      "etapes": [
+        {
+          "type": "email",
+          "jour": 0,
+          "intitule": "Rappel d'échéance et dates proposées"
+        },
+        {
+          "type": "appel",
+          "jour": 7,
+          "intitule": "Appel de confirmation"
+        },
+        {
+          "type": "email",
+          "jour": 21,
+          "intitule": "Dernier rappel avant expiration"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "Acheteur public avant marché",
+      "mode_validation": "Brouillon (chaque e-mail validé)",
+      "plafond_par_boite_jour": 20,
+      "etapes": [
+        {
+          "type": "email",
+          "jour": 0,
+          "intitule": "Demande de RDV de découverte (sourçage)"
+        },
+        {
+          "type": "appel",
+          "jour": 10,
+          "intitule": "Appel au service formation"
+        },
+        {
+          "type": "email",
+          "jour": 20,
+          "intitule": "Partage : guide des obligations des collectivités"
+        },
+        {
+          "type": "tache",
+          "jour": 30,
+          "intitule": "Vérifier la publication de l'avis (Veille AO)"
+        }
+      ]
+    }
+  ]
+}

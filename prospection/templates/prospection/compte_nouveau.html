@@ -1,0 +1,14 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Nouveau prospect{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Nouveau prospect</h1><div class="sub">Le reste de la fiche peut se compléter depuis l'annuaire officiel des entreprises.</div></div></div>
+<form method="post" class="card grid" style="gap:12px;max-width:640px">{% csrf_token %}
+  <label class="f">Raison sociale<input type="text" name="nom" required></label>
+  <div class="row"><label class="f">SIREN (si connu)<input type="text" name="siren" inputmode="numeric" maxlength="11"></label><label class="f">Code postal<input type="text" name="code_postal" maxlength="5"></label><label class="f">Ville<input type="text" name="ville"></label></div>
+  <div class="row"><label class="f">Effectif estimé<input type="number" name="effectif" value="20" min="1"></label>
+  <label class="f">Segment<select name="segment">{% for k, l in segments %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></label>
+  <label class="f">Source<input type="text" name="source" placeholder="ex. salon Préventica, recommandation"></label></div>
+  <label class="row small"><input type="checkbox" name="sirene" checked> Compléter depuis l'annuaire des entreprises (NAF, effectif, établissements, adresse)</label>
+  <div><button class="btn">Créer le prospect</button></div>
+</form>
+{% endblock %}

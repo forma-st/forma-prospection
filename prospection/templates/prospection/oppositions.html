@@ -1,0 +1,10 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Opposition{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Liste d'opposition</h1><div class="sub">Vérifiée à chaque import, chaque rédaction et chaque envoi, sur tous les canaux. Un domaine commence par @.</div></div></div>
+<form method="post" class="card row">{% csrf_token %}<input type="text" name="valeur" placeholder="adresse@domaine.fr ou @domaine.fr" style="flex:1;min-width:220px" required><button class="btn">Ajouter</button></form>
+<div class="card"><div class="list">{% for o in liste %}<div class="li"><span class="dot bad"></span><div class="grow small"><b>{{ o.valeur }}</b> · {{ o.source|default:"—" }} · {{ o.cree_le|date:"d/m/Y" }}</div>
+<form method="post" onsubmit="return confirm('Retirer cette adresse de la liste d\'opposition ?')">{% csrf_token %}<button class="btn sm ghost" name="supprimer" value="{{ o.pk }}">Retirer</button></form></div>{% empty %}<p class="small muted">Liste vide.</p>{% endfor %}</div></div>
+<div class="card"><h2>Mention d'information (ajoutée à chaque e-mail)</h2><div class="out">Vos coordonnées professionnelles proviennent de : [source]. FORMA'ST les utilise pour vous présenter ses formations en santé et sécurité au travail, pendant 3 ans au plus après notre dernier échange.
+Pour ne plus recevoir nos messages, répondez simplement « STOP » à cet e-mail.</div></div>
+{% endblock %}

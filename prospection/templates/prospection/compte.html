@@ -1,0 +1,182 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}{{ c.nom }}{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>{{ c.nom }}</h1>
+  <div class="sub">{{ c.ville|default:"Ville ?" }}{% if c.departement %} ({{ c.departement }}){% endif %} · SIREN {{ c.siren|default:"à rapprocher" }} · NAF {{ c.naf|default:"?" }} · {{ c.segment|segment_libelle }} · source : {{ c.source|default:"saisie" }}</div></div>
+  <div class="row"><a class="btn ghost" href="{% url 'prospection:prospects' %}">← Liste</a>
+    <div class="seg-ctl">{% if precedent %}<a href="{% url 'prospection:compte' precedent %}" data-nav="k" title="Précédente (K)">‹</a>{% else %}<span>‹</span>{% endif %}<span>{{ position }} / {{ total }}</span>{% if suivant %}<a href="{% url 'prospection:compte' suivant %}" data-nav="j" title="Suivante (J)">›</a>{% else %}<span>›</span>{% endif %}</div></div>
+</div>
+
+<div class="card row between sticky">
+  <div class="row">{% jauge c.score c.palier %}<div><div class="row"><span class="tier {{ c.palier }}">{{ c.palier }}</span><b>Palier {{ c.palier }}</b></div><div class="small muted">{{ c.signaux.all|length }} signal{{ c.signaux.all|length|pluralize }} · {{ contacts|length }} contact{{ contacts|length|pluralize }}</div></div>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="statut">
+      <select name="statut" aria-label="Statut" onchange="this.form.submit()">{% for s in statuts %}<option {% if s == c.statut %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></div>
+  <div class="row">
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}<button class="btn sm sec" name="action" value="sirene">Compléter depuis l'annuaire</button></form>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="tache">
+      <select name="type" aria-label="Type de tâche"><option value="appel">Appel</option><option value="email">E-mail</option>{% if linkedin_actif %}<option value="linkedin">LinkedIn</option>{% endif %}<option value="qualifier">Qualification</option></select>
+      <input type="date" name="echeance" aria-label="Échéance"><button class="btn sm sec">Créer une tâche</button></form>
+  </div>
+</div>
+{% if c.statut == "Opposé" %}<div class="confirm"><b>Opposition enregistrée.</b> Ce prospect est exclu de tout envoi, sur tous les canaux.</div>{% endif %}
+
+<div class="grid g2">
+<div class="grid" style="gap:16px;align-content:start">
+  <div class="card"><h2>Pourquoi ce score</h2><p style="margin:0 0 10px">{{ c.explication }}</p>
+    <div class="row" style="flex-wrap:nowrap"><span style="width:120px" class="small">Adéquation <span class="muted">×{{ parametres.poids_adequation }}</span></span><div class="bar info"><i style="width:{{ c.score_adequation }}%"></i></div><b style="width:30px;text-align:right">{{ c.score_adequation }}</b></div>
+    <div class="row" style="flex-wrap:nowrap"><span style="width:120px" class="small">Intention <span class="muted">×{{ parametres.poids_intention }}</span></span><div class="bar warn"><i style="width:{{ c.score_intention }}%"></i></div><b style="width:30px;text-align:right">{{ c.score_intention }}</b></div>
+    <div class="row" style="flex-wrap:nowrap"><span style="width:120px" class="small">Accessibilité <span class="muted">×{{ parametres.poids_accessibilite }}</span></span><div class="bar ok"><i style="width:{{ c.score_accessibilite }}%"></i></div><b style="width:30px;text-align:right">{{ c.score_accessibilite }}</b></div>
+  </div>
+
+  <div class="card"><div class="row between"><h2>Rédaction assistée</h2><span class="small muted">{% if message.ia %}Rédigé par l'IA à partir de la fiche{% else %}Modèle intégré{% endif %}</span></div>
+    <div class="tabs">{% for k, l in canaux %}<a href="?canal={{ k }}&ton={{ ton }}{% if contact %}&contact={{ contact.pk }}{% endif %}" class="{% if canal == k %}on{% endif %}">{{ l }}</a>{% endfor %}</div>
+    {% if erreur_ia %}<p class="small" style="color:var(--warn)">{{ erreur_ia }}</p>{% endif %}
+    <form method="get" class="row" style="margin-bottom:8px"><input type="hidden" name="canal" value="{{ canal }}">
+      <label class="f">Destinataire<select name="contact">{% for x in contacts %}<option value="{{ x.pk }}" {% if x == contact %}selected{% endif %}>{{ x.nom_complet }}{% if x.fonction %} · {{ x.fonction }}{% endif %}</option>{% empty %}<option value="">Aucun contact</option>{% endfor %}</select></label>
+      <label class="f">Ton<select name="ton">{% for k, l in tons %}<option value="{{ k }}" {% if ton == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+      <label class="f" style="flex:1;min-width:160px">Consigne (ex. « plus court », « parle de l'UMFI »)<input type="text" name="consigne" value="{{ consigne }}"></label>
+      <button class="btn sm sec" style="align-self:flex-end">Régénérer</button>
+      {% if ia_dispo %}<button class="btn sm" name="ia" value="1" style="align-self:flex-end" title="Réécriture par Claude, sans rien inventer">Améliorer avec l'IA</button>{% endif %}
+    </form>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}
+      <input type="hidden" name="action" value="envoye"><input type="hidden" name="canal" value="{{ canal }}"><input type="hidden" name="contact_id" value="{{ contact.pk|default:'' }}">
+      {% if canal == "email" or canal == "relance" %}<label class="f">Objet<input type="text" name="objet" id="objet" value="{{ message.objet }}"></label>{% else %}<input type="hidden" name="objet" value="{{ message.objet }}"><div class="small b" style="margin-bottom:4px">{{ message.objet }}</div>{% endif %}
+      <textarea id="texte" name="texte" rows="15" class="out" style="margin-top:6px">{{ message.texte }}</textarea>
+      {% if controle %}<div class="row between" style="margin-top:8px"><b class="small">Contrôle avant envoi</b><span id="qc-note" class="chip {% if controle.note >= 85 %}ok{% elif controle.note >= 60 %}warn{% else %}bad{% endif %}">{{ controle.note }} / 100</span></div>
+      <div class="qc" id="qc">{% for ok, l in controle.controles %}<span><b class="{% if ok %}y{% else %}n{% endif %}">{% if ok %}✓{% else %}!{% endif %}</b>{{ l }}</span>{% endfor %}</div>{% endif %}
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="btn sm sec" data-copier="texte" data-libelle="Copier le texte">Copier le texte</button>
+        {% if canal == "email" or canal == "relance" %}{% if contact.email and not oppose_email %}<a class="btn sm sec" id="mailto" href="mailto:{{ contact.email }}">Ouvrir dans ma messagerie</a>{% endif %}{% endif %}
+        {% if oppose_email %}<span class="chip bad">Adresse sur la liste d'opposition : envoi bloqué</span>{% else %}
+        <label class="row small">Relancer dans <select name="relance"><option value="">pas de relance</option><option value="3">3 j</option><option value="5" selected>5 j</option><option value="10">10 j</option></select></label>
+        <button class="btn sm" {% if not contact %}disabled{% endif %}>J'ai envoyé ce message</button>{% endif %}
+      </div>
+      <p class="small muted" style="margin:6px 0 0">L'envoi se fait depuis votre messagerie (module d'envoi prévu en phase 2). Ce bouton l'inscrit dans l'historique, note l'information RGPD et planifie la relance.</p>
+    </form>
+  </div>
+
+  {% if linkedin_actif %}
+  <div class="li-panel"><div class="row between"><h2>LinkedIn</h2><span class="small muted">Invitations cette semaine : {{ li.compteurs.invitations }} / {{ li.compteurs.invitations_max }} · profils aujourd'hui : {{ li.compteurs.profils }} / {{ li.compteurs.profils_max }}</span></div>
+    {% if li.compteurs.invitations_atteint or li.compteurs.profils_atteint %}<div class="confirm small" style="margin:8px 0">Plafond atteint : arrêtez pour aujourd'hui afin de protéger votre compte LinkedIn.</div>{% endif %}
+    <div class="row" style="margin:8px 0">
+      <a class="btn sm sec" href="{{ li.recherche_entreprise }}" target="_blank" rel="noopener">Page de l'entreprise</a>
+      <a class="btn sm sec" href="{{ li.recherche_decideur }}" target="_blank" rel="noopener">Chercher le décideur (QSE, RH, sécurité)</a>
+      {% if contact %}{% if contact.linkedin_url %}<a class="btn sm" href="{{ contact.linkedin_url }}" target="_blank" rel="noopener">Profil de {{ contact.nom_complet }}</a>{% else %}<a class="btn sm sec" href="{{ li.recherche_contact }}" target="_blank" rel="noopener">Chercher {{ contact.nom_complet }}</a>{% endif %}{% endif %}
+    </div>
+    <label class="f">Invitation préparée ({{ li.invitation|length }} / 300 caractères) — à coller et envoyer vous-même<textarea id="invitation" rows="4">{{ li.invitation }}</textarea></label>
+    <div class="row" style="margin-top:8px"><button type="button" class="btn sm sec" data-copier="invitation" data-libelle="Copier l'invitation">Copier l'invitation</button>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="linkedin"><input type="hidden" name="contact_id" value="{{ contact.pk|default:'' }}">
+        <span class="small muted">J'ai fait :</span><button class="btn sm ghost" name="type" value="profil">Profil consulté</button><button class="btn sm ghost" name="type" value="invitation" {% if li.compteurs.invitations_atteint %}disabled{% endif %}>Invitation envoyée</button><button class="btn sm ghost" name="type" value="message">Message envoyé</button></form></div>
+    {% if contact and not contact.linkedin_url %}<form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="contact_linkedin"><input type="hidden" name="contact_id" value="{{ contact.pk }}">
+      <input type="url" name="linkedin_url" placeholder="Coller l'adresse du profil trouvé" style="flex:1;min-width:200px"><button class="btn sm sec">Enregistrer le profil</button></form>{% endif %}
+    {% if li.actions %}<div class="small muted" style="margin-top:8px">Dernières actions : {% for a in li.actions %}{{ a.get_type_display|lower }} le {{ a.cree_le|date:"d/m" }}{% if not forloop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+    <p class="small muted" style="margin:8px 0 0">L'agent ne lit pas LinkedIn et n'envoie rien à votre place. Avec Claude in Chrome, voir les <a href="{% url 'prospection:linkedin' %}">consignes du copilote</a>.</p>
+  </div>
+  {% endif %}
+
+  <div class="card"><h2>Brief du compte</h2><div class="out">{{ brief }}</div></div>
+
+  <div class="card"><h2>Historique</h2>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row" style="margin-bottom:8px">{% csrf_token %}<input type="hidden" name="action" value="note">
+      <select name="type" aria-label="Type"><option value="note">Note</option><option value="appel">Appel</option><option value="email">E-mail</option></select>
+      <input type="text" name="texte" placeholder="Compte rendu, information utile…" style="flex:1;min-width:200px"><button class="btn sm sec">Ajouter</button></form>
+    <div class="list">{% for a in c.activites.all|slice:":40" %}<div class="li"><span class="dot {% if a.type == 'statut' %}warn{% elif a.type == 'systeme' %}{% else %}info{% endif %}"></span><div class="grow small"><b>{{ a.cree_le|date:"d/m/Y H:i" }}</b> · {{ a.get_type_display }} · {{ a.texte|linebreaksbr|truncatewords_html:60 }}{% if a.utilisateur %} <span class="muted">({{ a.utilisateur }})</span>{% endif %}</div></div>
+    {% empty %}<p class="small muted">Aucun historique.</p>{% endfor %}</div></div>
+</div>
+
+<div class="grid" style="gap:16px;align-content:start">
+  <div class="card"><h2>Besoin estimé</h2>
+    <dl class="kv"><dt>SST recommandés</dt><dd><b>{{ b.sst }}</b> ({{ b.part_sst }} % de l'effectif) · {{ b.sessions_sst }} session{{ b.sessions_sst|pluralize }}{% if b.ecart_sst is not None %} · <b>écart {{ b.ecart_sst }}</b>{% endif %}</dd>
+    <dt>Manutention</dt><dd>{{ b.manutention }} salariés exposés · {{ b.sessions_gp }} session{{ b.sessions_gp|pluralize }}</dd>
+    <dt>Évacuation</dt><dd>{{ b.exercices }} exercices par an (2 par site){% if c.icpe %} · ICPE{% endif %}</dd>
+    <dt>Potentiel 1re année</dt><dd><b>{{ b.potentiel_an1|eur }}</b></dd><dt>Récurrent annuel</dt><dd>{{ b.recurrent|eur }}</dd>
+    <dt>Financement</dt><dd>{{ c.opco|default:"OPCO ?" }}{% if b.opco_finance %} · <span class="chip ok">finançable &lt; 50 sal.</span>{% endif %}</dd></dl>
+    <p class="small muted" style="margin:8px 0 0">INRS 10 à 15 %, R4224-15, R4227-39, R4541-8. Tarifs {% if b.tarifs.source == "catalogue" %}du catalogue{% else %}d'exemple (à remplacer dans Catalogue et profil){% endif %}, pour estimer le potentiel uniquement.</p>
+  </div>
+
+  <div class="card"><h2>Signaux</h2><div class="list">
+    {% for s in c.signaux.all %}{% if s.actif %}<div class="li"><span class="dot info"></span><div class="grow small"><b>{{ s.type|signal_libelle }}</b> · il y a {{ s.age_jours }} j<br>{{ s.texte }}<br><span class="muted">{% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.source }}</a>{% else %}{{ s.source }}{% endif %} · {{ s.date_signal|date:"d/m/Y" }}</span></div>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}<input type="hidden" name="action" value="signal_off"><input type="hidden" name="signal_id" value="{{ s.pk }}"><button class="btn sm ghost" title="Ne plus compter ce signal">×</button></form></div>{% endif %}
+    {% empty %}<p class="small muted">Aucun signal : le score repose sur l'adéquation.</p>{% endfor %}</div>
+    <details><summary>Ajouter un signal</summary>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="grid" style="gap:6px;margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="signal">
+        <select name="type">{% for k, l in types_signaux %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select>
+        <input type="text" name="texte" placeholder="Ce qui s'est passé (ex. offre d'emploi « Responsable HSE »)" required>
+        <div class="row"><input type="text" name="source" placeholder="Source (BODACC, France Travail, presse…)" style="flex:1"><input type="date" name="date_signal"></div>
+        <input type="url" name="url" placeholder="Lien vers la source (facultatif)"><button class="btn sm sec" style="justify-self:start">Ajouter</button></form></details>
+  </div>
+
+  <div class="card"><h2>Contacts</h2><div class="list">
+    {% for x in c.contacts.all %}<div class="li"><div class="grow small"><b>{{ x.nom_complet }}</b>{% if x.fonction %} · {{ x.fonction }}{% endif %} <span class="chip">{{ x.get_role_display }}</span>{% if x.oppose %} <span class="chip bad">opposé</span>{% endif %}<br>
+      {% if x.email %}{{ x.email }} <span class="chip {% if x.statut_email == 'verifie' %}ok{% elif x.statut_email == 'probable' %}warn{% endif %}">{{ x.get_statut_email_display|lower }}</span>{% else %}<span class="muted">e-mail inconnu</span>{% endif %}{% if x.telephone %}<br>{{ x.telephone }}{% endif %}{% if x.linkedin_url %}<br><a href="{{ x.linkedin_url }}" target="_blank" rel="noopener">Profil LinkedIn</a>{% endif %}{% if x.informe_le %}<br><span class="muted">informé (RGPD) le {{ x.informe_le|date:"d/m/Y" }}</span>{% endif %}</div>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}<input type="hidden" name="action" value="contact_supprimer"><input type="hidden" name="contact_id" value="{{ x.pk }}"><button class="btn sm ghost" title="Supprimer le contact">×</button></form></div>
+    {% empty %}<p class="small muted">Aucun contact.</p>{% endfor %}</div>
+    <details {% if not c.contacts.all %}open{% endif %}><summary>Ajouter un contact</summary>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="grid" style="gap:6px;margin-top:8px">{% csrf_token %}<input type="hidden" name="action" value="contact">
+        <div class="row"><input type="text" name="prenom" placeholder="Prénom" style="flex:1;min-width:100px"><input type="text" name="nom" placeholder="Nom" required style="flex:1;min-width:100px"></div>
+        <div class="row"><input type="text" name="fonction" placeholder="Fonction" style="flex:1;min-width:120px"><select name="role">{% for k, l in roles %}<option value="{{ k }}" {% if k == 'decideur' %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="row"><input type="email" name="email" placeholder="E-mail professionnel" style="flex:1;min-width:160px"><select name="statut_email">{% for k, l in statuts_email %}<option value="{{ k }}" {% if k == 'probable' %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="row"><input type="text" name="telephone" placeholder="Téléphone" style="flex:1"><input type="url" name="linkedin_url" placeholder="Profil LinkedIn (facultatif)" style="flex:1"></div>
+        <button class="btn sm sec" style="justify-self:start">Ajouter</button></form></details>
+  </div>
+
+  <div class="card"><h2>Guide de découverte</h2><p class="small muted" style="margin-top:0">À remplir pendant l'appel : l'écart de SST à former se recalcule.</p>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="grid" style="gap:6px">{% csrf_token %}<input type="hidden" name="action" value="decouverte">
+      <label class="f">SST déjà formés<input type="number" name="sst" min="0" value="{{ c.decouverte.sst|default:'' }}"></label>
+      <label class="f">Dernier exercice d'évacuation<select name="exercice">
+        <option {% if c.decouverte.exercice == "inconnu" %}selected{% endif %}>inconnu</option><option {% if c.decouverte.exercice == "moins de 6 mois" %}selected{% endif %}>moins de 6 mois</option><option {% if c.decouverte.exercice == "6 à 12 mois" %}selected{% endif %}>6 à 12 mois</option><option {% if c.decouverte.exercice == "plus d'un an" %}selected{% endif %}>plus d'un an</option><option {% if c.decouverte.exercice == "jamais" %}selected{% endif %}>jamais</option></select></label>
+      <label class="f">Qui décide ?<input type="text" name="decideur" value="{{ c.decouverte.decideur|default:'' }}"></label>
+      <label class="f">Prestataire actuel<input type="text" name="prestataire" value="{{ c.decouverte.prestataire|default:'' }}"></label>
+      <label class="f">Financement<input type="text" name="financement" value="{{ c.decouverte.financement|default:'' }}" placeholder="OPCO, budget interne, marché public…"></label>
+      <label class="f">Échéance du projet<input type="text" name="echeance" value="{{ c.decouverte.echeance|default:'' }}" placeholder="ce trimestre, dans 3 à 6 mois…"></label>
+      <button class="btn sm sec" style="justify-self:start">Enregistrer</button></form>
+  </div>
+
+  <div class="card"><h2>Identité</h2>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="grid" style="gap:6px">{% csrf_token %}<input type="hidden" name="action" value="modifier">
+      <div class="row"><label class="f">SIREN<input type="text" name="siren" value="{{ c.siren }}" maxlength="11" style="width:120px"></label><label class="f">NAF<input type="text" name="naf" value="{{ c.naf }}" style="width:80px"></label>
+        <label class="f">Segment<select name="segment">{% for k, l in segments %}<option value="{{ k }}" {% if c.segment == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label></div>
+      <div class="row"><label class="f">Effectif<input type="number" name="effectif" value="{{ c.effectif }}" min="0" style="width:90px"></label><label class="f">Établissements<input type="number" name="nb_etablissements" value="{{ c.nb_etablissements }}" min="1" style="width:90px"></label>
+        <label class="f">Code postal<input type="text" name="code_postal" value="{{ c.code_postal }}" maxlength="5" style="width:80px"></label><label class="f">Ville<input type="text" name="ville" value="{{ c.ville }}"></label></div>
+      <div class="row"><label class="f">OPCO<input type="text" name="opco" value="{{ c.opco }}"></label><label class="f" style="flex:1">Site web<input type="url" name="site_web" value="{{ c.site_web }}"></label></div>
+      {% if linkedin_actif %}<label class="f">Page LinkedIn de l'entreprise<input type="url" name="linkedin_url" value="{{ c.linkedin_url }}"></label>{% endif %}
+      <div class="row small"><label class="row"><input type="checkbox" name="icpe" {% if c.icpe %}checked{% endif %}> Site ICPE</label><label class="row"><input type="checkbox" name="erp" {% if c.erp %}checked{% endif %}> ERP</label><label class="row"><input type="checkbox" name="est_client" {% if c.est_client %}checked{% endif %}> Déjà client</label></div>
+      <button class="btn sm sec" style="justify-self:start">Enregistrer et recalculer</button></form>
+    <p class="small muted" style="margin:8px 0 0">{% if c.sirene_le %}Annuaire : {{ c.sirene_le|date:"d/m/Y" }} (confiance {{ c.sirene_confiance }} %){% else %}Pas encore rapproché avec l'annuaire{% endif %} · IDCC {{ c.idcc|default:"?" }} · base légale : intérêt légitime B2B</p>
+    <div class="row" style="margin-top:8px">
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="ecarter"><input type="text" name="motif" placeholder="Motif" style="width:140px"><button class="btn sm ghost">Écarter</button></form>
+      <form method="post" action="{% url 'prospection:compte_action' c.pk %}" onsubmit="return confirm('Enregistrer une opposition pour tous les contacts de ce prospect ?')">{% csrf_token %}<button class="btn sm ghost" name="action" value="opposer">Marquer opposé</button></form>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ controle_info|json_script:"controle-info" }}
+<script>
+(function(){
+  var t=document.getElementById('texte'), box=document.getElementById('qc'), note=document.getElementById('qc-note');
+  if(!t||!box) return;
+  var info=JSON.parse(document.getElementById('controle-info').textContent), canal=info.canal;
+  function maj(){
+    var v=t.value, corps=v.split('\n—\n')[0], c=[];
+    if(canal==='linkedin'){c.push([v.length<=300, v.length+' / 300 caractères']);c.push([!/https?:\/\//.test(v),'Pas de lien dans une invitation']);c.push([/Bonjour \S/.test(v),'Salutation personnalisée']);c.push([!/gratuit|promo|urgent/i.test(v),'Pas de ton promotionnel']);}
+    else{var mots=corps.split(/\s+/).filter(Boolean).length, q=(corps.match(/\?/g)||[]).length;
+      c.push([mots>=60&&mots<=170, mots+' mots (idéal : 60 à 170)']);
+      c.push([info.noms.some(function(n){return n&&corps.indexOf(n)>=0}),'Personnalisé (entreprise ou contact cité)']);
+      if(info.motif) c.push([new RegExp(info.motif,'i').test(corps),'Accroche sur le signal « '+info.signal+' »']);
+      c.push([q===1, q===1?'Une seule question, claire':q+' questions (en garder une)']);
+      c.push([!/gratuit|urgent|promo|exceptionnel|garanti|!!/i.test(corps),'Pas de mots qui déclenchent les filtres anti-spam']);
+      c.push([/ne plus recevoir|STOP|opposition/i.test(v),"Mention d'opposition présente"]);
+      var m=v.match(/\[[^\]]+\]/g)||[]; c.push([!m.length, m.length?'À compléter : '+Array.from(new Set(m)).slice(0,3).join(', '):'Aucun champ à compléter']);}
+    var ok=c.filter(function(x){return x[0]}).length, p=Math.round(ok/c.length*100);
+    box.innerHTML=c.map(function(x){return '<span><b class="'+(x[0]?'y':'n')+'">'+(x[0]?'✓':'!')+'</b>'+x[1].replace(/</g,'&lt;')+'</span>'}).join('');
+    note.textContent=p+' / 100'; note.className='chip '+(p>=85?'ok':p>=60?'warn':'bad');
+    var mail=document.getElementById('mailto'), o=document.getElementById('objet');
+    if(mail){var href=mail.getAttribute('href').split('?')[0]; mail.setAttribute('href', href+'?subject='+encodeURIComponent(o?o.value:'')+'&body='+encodeURIComponent(v));}
+  }
+  t.addEventListener('input',maj); var o=document.getElementById('objet'); if(o) o.addEventListener('input',maj); maj();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Import {{ imp.nom_fichier }}{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>{{ imp.nom_fichier }}</h1><div class="sub">{{ imp.get_type_display }} · {{ imp.lignes|length }} ligne{{ imp.lignes|length|pluralize }}{% if imp.applique_le %} · importé le {{ imp.applique_le|date:"d/m/Y H:i" }}{% endif %}</div></div>
+<a class="btn ghost" href="{% url 'prospection:import' %}">← Imports</a></div>
+<form method="post">{% csrf_token %}
+<div class="card"><h2>Correspondance des colonnes</h2><p class="small muted" style="margin-top:0">Détectée d'après les intitulés. Corrigez si besoin, puis cliquez sur « Vérifier ».</p>
+  <div class="tw"><table><thead><tr><th>Colonne du fichier</th><th>Champ de l'agent</th><th>Exemple</th></tr></thead><tbody>
+  {% for i, h, choisi, ex in colonnes %}<tr><td>{{ h }}</td><td><select name="col{{ i }}" {% if imp.applique_le %}disabled{% endif %}>{% for k, l in champs %}<option value="{{ k }}" {% if k == choisi %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></td><td class="small muted">{{ ex }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if not imp.applique_le %}<div class="row" style="margin-top:10px"><button class="btn sec">Vérifier</button><button class="btn" name="appliquer" value="1" {% if not a_importer and not nb_completes %}disabled{% endif %}>Importer {{ a_importer }} ligne{{ a_importer|pluralize }}{% if nb_completes %} et compléter {{ nb_completes }} fiche{{ nb_completes|pluralize }}{% endif %}</button></div>{% endif %}
+</div>
+</form>
+{% if imp.type == "prospects" %}
+<div class="kpis">  <div class="kpi"><span class="l">Nouveaux</span><span class="v">{{ compteurs.Nouveau|default:0 }}</span></div>
+  <div class="kpi"><span class="l">À vérifier</span><span class="v">{{ nb_verifier }}</span></div>
+  <div class="kpi"><span class="l">Doublons</span><span class="v">{{ compteurs.Doublon|default:0 }}</span></div>
+  <div class="kpi"><span class="l">Opposés</span><span class="v">{{ nb_opposes }}</span></div>
+  <div class="kpi"><span class="l">Rejetés</span><span class="v">{{ nb_rejetes }}</span></div>
+</div>
+<div class="card"><h2>Contrôle des lignes</h2><div class="tw"><table><thead><tr><th>Ligne</th><th>Raison sociale</th><th>Ville</th><th>Effectif</th><th>Contact</th><th>Résultat</th></tr></thead><tbody>
+{% for x in analyse %}<tr><td>{{ forloop.counter|add:1 }}</td><td>{{ x.donnees.nom }}</td><td>{{ x.donnees.ville }}</td><td>{{ x.donnees.effectif }}</td><td class="small">{{ x.donnees.prenom }} {{ x.donnees.contact }}<div class="muted">{{ x.donnees.email }}</div></td>
+<td><span class="chip {{ x.classe }}">{{ x.etat }}</span><div class="small muted">{{ x.note }}</div></td></tr>{% endfor %}
+</tbody></table></div><p class="small muted">Les doublons complètent la fiche existante (contact ajouté) sans la dupliquer. Import annulable pendant 30 jours.</p></div>
+{% endif %}
+{% endblock %}

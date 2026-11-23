@@ -1,0 +1,68 @@
+{
+  "_note": "Calendrier marketing annuel (cahier §3.18).",
+  "campagnes": [
+    {
+      "id": 1,
+      "mois": "Décembre 2026",
+      "titre": "Bilan sécurité et plan de formation 2027",
+      "segments": "Clients et prospects A",
+      "canaux": "E-mail · post LinkedIn"
+    },
+    {
+      "id": 2,
+      "mois": "Janvier 2027",
+      "titre": "Budgets 2027 : les formations obligatoires à prévoir",
+      "segments": "PME de 50 à 250 salariés",
+      "canaux": "E-mail · guide PDF à télécharger"
+    },
+    {
+      "id": 3,
+      "mois": "Février 2027",
+      "titre": "Simulateur « Combien de SST vous faut-il ? »",
+      "segments": "Tous segments",
+      "canaux": "Page web · formulaire · LinkedIn"
+    },
+    {
+      "id": 4,
+      "mois": "Mars 2027",
+      "titre": "Recyclages MAC SST du printemps",
+      "segments": "Clients (historique)",
+      "canaux": "E-mail · appel"
+    },
+    {
+      "id": 5,
+      "mois": "Mai 2027",
+      "titre": "Prévention chaleur et travail en extérieur",
+      "segments": "Logistique, BTP",
+      "canaux": "E-mail · post LinkedIn"
+    },
+    {
+      "id": 6,
+      "mois": "Juin 2027",
+      "titre": "Saisonniers : accueil sécurité en une demi-journée",
+      "segments": "Hôtellerie, commerce, centres aquatiques",
+      "canaux": "E-mail"
+    },
+    {
+      "id": 7,
+      "mois": "Septembre 2027",
+      "titre": "Rentrée : former les nouveaux arrivants",
+      "segments": "Logistique, santé",
+      "canaux": "E-mail · LinkedIn"
+    },
+    {
+      "id": 8,
+      "mois": "Octobre 2027",
+      "titre": "Semaine européenne de la santé et sécurité au travail",
+      "segments": "Tous segments",
+      "canaux": "Webinaire de 30 min · LinkedIn"
+    },
+    {
+      "id": 9,
+      "mois": "Novembre 2027",
+      "titre": "Fin d'année : le budget formation à consommer",
+      "segments": "Clients et prospects B",
+      "canaux": "E-mail · appel"
+    }
+  ]
+}

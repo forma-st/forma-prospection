@@ -1,0 +1,1471 @@
+<title>Agent de prospection FORMA'ST</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout : barre latérale de navigation (barre horizontale sur mobile) + zone de travail ; palette reprise de Veille AO (rouge FORMA'ST, neutres chauds) */
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --surface-2:#faf9f7; --fg:#1f2328; --muted:#626a73; --line:#e1ded8;
+  --accent:#b3261e; --accent-fg:#ffffff; --accent-soft:#f8e7e5;
+  --ok:#1f7a3a; --ok-soft:#e5f2e8; --warn:#9a5b00; --warn-soft:#fbf0dc; --bad:#b3261e; --bad-soft:#f8e7e5; --info:#0b5cad; --info-soft:#e4eef9;
+  --font-display:"Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body:"Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius:8px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#151618; --surface:#1d1e21; --surface-2:#242529; --fg:#ebeae6; --muted:#a2a6ab; --line:#33353a;
+  --accent:#e5685d; --accent-fg:#1a0b09; --accent-soft:#3a2220;
+  --ok:#62c27e; --ok-soft:#1c3324; --warn:#e3a646; --warn-soft:#3a2d17; --bad:#ef6d63; --bad-soft:#3d2120; --info:#74aef0; --info-soft:#1c2c40;
+  color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#151618; --surface:#1d1e21; --surface-2:#242529; --fg:#ebeae6; --muted:#a2a6ab; --line:#33353a;
+  --accent:#e5685d; --accent-fg:#1a0b09; --accent-soft:#3a2220;
+  --ok:#62c27e; --ok-soft:#1c3324; --warn:#e3a646; --warn-soft:#3a2d17; --bad:#ef6d63; --bad-soft:#3d2120; --info:#74aef0; --info-soft:#1c2c40;
+  color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--font-body);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:22px} h2{font-size:16px} h3{font-size:14px}
+a{color:var(--info)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100%}
+.nav{background:var(--surface);border-right:1px solid var(--line);padding:16px 10px;position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;flex-direction:column;padding:4px 10px 14px}
+.brand b{font-family:var(--font-display);color:var(--accent);font-size:17px}
+.brand span{color:var(--muted);font-size:12px}
+.nav a{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--surface-2)}
+.nav a.on{background:var(--accent-soft);color:var(--accent)}
+.nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 10px 4px}
+.badge{font-size:11px;min-width:20px;text-align:center;padding:0 6px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);color:var(--muted)}
+.nav a.on .badge{border-color:transparent;background:var(--accent);color:var(--accent-fg)}
+.main{min-width:0;padding-block:18px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.top .t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sub{color:var(--muted);font-size:13px}
+.demo{font-size:12px;padding:3px 10px;border-radius:20px;background:var(--warn-soft);color:var(--warn);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;min-width:0}
+.card>h2,.card>h3{margin-bottom:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.g2e{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g2a{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}
+.g2b{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .v{font-family:var(--font-display);font-size:24px;font-weight:600}
+.kpi .l{font-size:12px;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer;font-weight:500;text-decoration:none;white-space:nowrap}
+.btn:hover{filter:brightness(1.05)}
+.btn.sec{background:var(--surface);color:var(--accent)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--fg)}
+.btn.sm{padding:3px 9px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+input[type=text],input[type=email],input[type=number],input[type=date],select,textarea{padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+textarea{width:100%;resize:vertical;line-height:1.5}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface-2);font-weight:600;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface-2)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:1px 8px;border-radius:20px;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.chip.info{background:var(--info-soft);color:var(--info);border-color:transparent}
+.tier{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-weight:700;font-size:12px;font-family:var(--font-display)}
+.tier.A{background:var(--ok);color:var(--surface)} .tier.B{background:var(--warn);color:var(--surface)} .tier.C{background:var(--line);color:var(--muted)}
+.score{display:flex;align-items:center;gap:8px}
+.bar{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;flex:1;min-width:40px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.bar.ok i{background:var(--ok)} .bar.warn i{background:var(--warn)} .bar.info i{background:var(--info)}
+.muted{color:var(--muted)} .small{font-size:12px} .b{font-weight:600}
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.li:last-child{border-bottom:0}
+.li .grow{flex:1;min-width:0}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:var(--muted)}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)} .dot.info{background:var(--info)}
+.funnel{display:flex;flex-direction:column;gap:6px}
+.funnel .fr{display:grid;grid-template-columns:120px minmax(0,1fr) 48px;gap:8px;align-items:center;font-size:13px}
+.funnel .fb{height:18px;border-radius:4px;background:var(--accent);opacity:.85}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:10px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:7px 10px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap;font-weight:500}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.out{white-space:pre-wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:13.5px;min-height:180px}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px dashed var(--line)}
+.step:last-child{border-bottom:0}
+.step .j{font-family:var(--font-display);font-weight:600;color:var(--muted)}
+.ty{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:1px 7px;border-radius:4px}
+.ty.email{background:var(--info-soft);color:var(--info)} .ty.linkedin{background:var(--ok-soft);color:var(--ok)} .ty.appel{background:var(--warn-soft);color:var(--warn)} .ty.tache{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.switch{position:relative;width:36px;height:20px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:20px;cursor:pointer;transition:.15s}
+.switch span::after{content:"";position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--surface);border-radius:50%;transition:.15s}
+.switch input:checked+span{background:var(--ok)}
+.switch input:checked+span::after{transform:translateX(16px)}
+.rule{font-size:13px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:2px 8px}
+.rule b{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:62vh;overflow:auto;padding:4px}
+.msg{max-width:88%;padding:9px 12px;border-radius:10px;font-size:13.5px;min-width:0}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--accent-fg)}
+.msg.a{align-self:flex-start;background:var(--surface-2);border:1px solid var(--line)}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:22px;text-align:center;background:var(--surface-2)}
+.drop.over{border-color:var(--accent)}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:13px;max-width:360px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:50}
+.confirm{border:1px solid var(--warn);background:var(--warn-soft);border-radius:var(--radius);padding:10px 12px}
+.mail{white-space:pre-wrap;font-size:13.5px;border-left:3px solid var(--line);padding-left:12px}
+.crm{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.crm .h{background:var(--surface-2);padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.widget{border:1px solid var(--accent);border-radius:var(--radius);padding:12px;background:var(--surface)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+@media (max-width:980px){ .g2,.g2e,.g2a,.g2b,.g3{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;height:auto;flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));gap:4px}
+  .nav .grp,.brand span{display:none}
+  .brand{padding:6px 8px 6px 0;flex:none}
+  .nav a{flex:none}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+  .hide-m{display:none}
+}
+/* --- v4 : barre supérieure, icônes, palette, journée, colonnes --- */
+.ic{width:17px;height:17px;flex:none}
+.nav a .lbl{display:flex;align-items:center;gap:10px;min-width:0}
+.nav a .ic{opacity:.75} .nav a.on .ic{opacity:1}
+.nav .foot{margin-top:auto;padding:12px 10px 0;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.topbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.search{flex:1;max-width:460px;display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);cursor:pointer;text-align:left;min-width:0}
+.search span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+kbd{font:11px var(--font-body);padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface-2);color:var(--muted)}
+.iconbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;text-decoration:none}
+.iconbtn .dotc{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--accent);color:var(--accent-fg);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.pal-back{position:fixed;inset:0;background:rgba(10,10,12,.45);z-index:60;display:flex;justify-content:center;align-items:flex-start;padding:calc(12vh + env(safe-area-inset-top,0px)) 16px 16px}
+.pal{width:min(640px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.pal input{width:100%;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 16px;font-size:15px;background:var(--surface);outline:none}
+.pal ul{list-style:none;margin:0;padding:6px;max-height:52vh;overflow:auto}
+.pal li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:7px;cursor:pointer}
+.pal li.on{background:var(--accent-soft);color:var(--accent)}
+.pal li .k{margin-left:auto;font-size:11px;color:var(--muted)}
+.pal .ft{display:flex;gap:14px;padding:8px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);flex-wrap:wrap}
+.hello{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.hello h1{font-size:26px}
+.night{display:flex;flex-direction:column;gap:6px}
+.night .li{padding:6px 0}
+.nba{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.nba:last-child{border-bottom:0}
+.nba .ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);color:var(--muted)}
+.nba .ico.hot{background:var(--accent-soft);color:var(--accent)}
+.nba .why{font-size:12.5px;color:var(--muted);margin-top:2px}
+.nba .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.prog{height:8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ok)}
+.seg-ctl{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg-ctl button{border:0;background:var(--surface);padding:5px 10px;cursor:pointer;font-size:12.5px;color:var(--muted);border-right:1px solid var(--line)}
+.seg-ctl button:last-child{border-right:0}
+.seg-ctl button.on{background:var(--accent);color:var(--accent-fg)}
+.seg-ctl button[disabled]{cursor:not-allowed;opacity:.45}
+.views{display:flex;gap:6px;flex-wrap:wrap}
+.views button{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:13px;color:var(--fg)}
+.views button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.kb{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:10px;overflow-x:auto;padding-bottom:6px}
+.kcol{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px;min-height:260px;display:flex;flex-direction:column;gap:8px}
+.kcol.over{border-color:var(--accent);background:var(--accent-soft)}
+.kcol h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:flex;justify-content:space-between;padding:2px 4px}
+.kc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;cursor:grab;display:flex;flex-direction:column;gap:4px}
+.kc:hover{border-color:var(--muted)}
+.kc.drag{opacity:.4}
+.gauge{flex:none}
+.sticky{position:sticky;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.qc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 14px;margin-top:8px;font-size:12.5px}
+.qc span{display:flex;gap:6px;align-items:flex-start}
+.qc .y{color:var(--ok)} .qc .n{color:var(--warn)}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.camp{display:flex;flex-direction:column;gap:6px}
+.camp .m{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.lvl td:first-child{min-width:220px}
+.flow{display:flex;align-items:stretch;gap:0;margin-top:8px;font-size:12.5px}
+.flow>div{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--surface-2)}
+.flow>div b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:2px}
+.flow>div.q{border-left:3px solid var(--info)} .flow>div.si{border-left:3px solid var(--warn)} .flow>div.al{border-left:3px solid var(--ok)}
+.flow>i{flex:none;width:18px;align-self:center;text-align:center;color:var(--muted);font-style:normal}
+.aic{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 4px 2px 10px;border-radius:20px;background:var(--info-soft);color:var(--info)}
+.aic button{border:0;background:none;color:inherit;cursor:pointer;padding:0 4px;font-size:13px}
+th.ai{color:var(--info)}
+.dv td,.dv th{padding:6px 8px}
+.dv input[type=number]{width:62px;padding:3px 6px}
+.tot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;font-size:13px;margin-top:8px}
+.tot b{text-align:right}
+.fc{display:grid;grid-template-columns:110px minmax(0,1fr) 90px;gap:10px;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.fc:last-child{border-bottom:0}
+.stack{display:flex;height:16px;border-radius:4px;overflow:hidden;background:var(--surface-2)}
+.stack i{display:block;height:100%}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.leg span{display:inline-flex;align-items:center;gap:5px}
+.leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.pb{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+@media (max-width:760px){ .flow{flex-direction:column} .flow>i{transform:rotate(90deg);width:auto} .fc{grid-template-columns:80px minmax(0,1fr)} .fc .hide-s{display:none} .pb{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:760px){ .search kbd,.hide-s{display:none} .nba{grid-template-columns:34px minmax(0,1fr)} .nba .acts{grid-column:1 / -1;justify-content:flex-start} .nav .foot{display:none} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <nav class="nav" id="nav" aria-label="Navigation principale"></nav>
+  <main class="main"><div class="wrap" id="view"></div></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div id="pal"></div>
+
+<script>
+/* ============ Données fictives ============ */
+const TODAY = new Date(2026,10,18);
+const DAY = 864e5;
+const fmt = d => d.toLocaleDateString('fr-FR');
+const ago = n => new Date(TODAY - n*DAY);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+
+const SEGMENTS = {
+  logistique:{l:'Logistique et transport', w:30, gp:.6},
+  sante:{l:'Santé et médico-social', w:28, gp:.5},
+  industrie:{l:'Industrie', w:28, gp:.4},
+  commerce:{l:'Commerce multi-sites', w:26, gp:.3},
+  collectivite:{l:'Collectivités et bailleurs', w:22, gp:.25},
+  hotellerie:{l:'Hôtellerie-restauration', w:18, gp:.3},
+  btp:{l:'BTP', w:18, gp:.5},
+  prescripteur:{l:'Prescripteur', w:10, gp:0}
+};
+const SIGNAUX = {
+  site:{l:'Nouvel établissement', w:35, hl:60},
+  qse:{l:'Recrutement QSE / HSE', w:30, hl:30},
+  recrut:{l:'Recrutement en nombre', w:20, hl:30},
+  dirigeant:{l:'Nouveau décideur', w:20, hl:90},
+  marche:{l:'Marché public à renouveler', w:40, hl:180},
+  ao:{l:'Acheteur public actif', w:15, hl:120},
+  mac:{l:'MAC SST à échéance', w:50, hl:90},
+  presse:{l:'Actualité', w:25, hl:45},
+  web:{l:'Intérêt sur le site web', w:25, hl:14},
+  ouvert:{l:'E-mails ouverts sans réponse', w:10, hl:14}
+};
+const STATUTS = ['Nouveau','À qualifier','À contacter','En séquence','A répondu','RDV fixé','Transmis au CRM','Client','Pas maintenant','Écarté','Opposé'];
+const PRIX = {sst:1450, gp:980, incendie:690}; // tarifs d'exemple (session intra)
+
+function P(id,nom,ville,dep,seg,naf,eff,sites,o){return Object.assign({id,nom,ville,dep,seg,naf,eff,sites,icpe:false,erp:false,opco:'',statut:'À contacter',owner:'J. Morel',signaux:[],contacts:[],hist:[],client:false,src:'Fichier CCI 2026'},o)}
+const C=(n,f,role,email,es,tel)=>({n,f,role,email,es,tel:tel||''});
+const S0 = (t,d,txt,src)=>({t,d,txt,src});
+
+function seed(){ return {
+prospects:[
+P(1,'Logistique du Vexin','Cergy','95','logistique','52.10B',240,2,{icpe:true,opco:'OPCO Mobilités',siren:'912 345 671',
+  signaux:[S0('qse',6,"Offre d'emploi « Responsable HSE (CDI) » publiée",'France Travail'),S0('site',25,"Nouvel établissement immatriculé à Saint-Ouen-l'Aumône",'BODACC')],
+  contacts:[C('Claire Vasseur','Directrice des ressources humaines','decideur','c.vasseur@logistique-vexin.example','verifie'),C('Standard','Accueil','standard','contact@logistique-vexin.example','verifie','01 30 00 00 01')]}),
+P(2,'Clinique des Hauts-Prés','Eaubonne','95','sante','86.10Z',310,1,{erp:true,opco:'OPCO Santé',siren:'913 456 782',statut:'En séquence',
+  signaux:[S0('dirigeant',40,"Nomination d'une nouvelle directrice des soins",'Presse locale')],
+  contacts:[C('Sophie Lemaire','Directrice des ressources humaines','decideur','s.lemaire@cliniquehp.example','probable')]}),
+P(3,'Maison & Jardin Ouest','Nantes','44','commerce','47.52B',820,46,{erp:true,opco:"OPCO Commerce",siren:'914 567 893',
+  signaux:[S0('presse',12,"Annonce de 8 ouvertures de magasins en 2027",'Communiqué de presse')],
+  contacts:[C('Thomas Garnier','Responsable sécurité et prévention','decideur','t.garnier@mjo.example','verifie')]}),
+P(4,'Métallerie Durand & Fils','Beauvais','60','industrie','25.11Z',95,1,{icpe:true,opco:'OPCO 2i',siren:'915 678 904',statut:'En séquence',
+  signaux:[S0('recrut',9,"14 offres d'emploi ouvertes (soudeurs, opérateurs)",'France Travail')],
+  contacts:[C('Pascal Durand','Gérant','decideur','','absent','03 44 00 00 04')]}),
+P(5,'Syndicat intercommunal Val-Nord Services','Sarcelles','95','collectivite','84.11Z',420,12,{erp:true,opco:'CNFPT',siren:'200 012 345',owner:'S. Diallo',src:'Veille AO (attributions)',
+  signaux:[S0('marche',120,"Marché de formation sécurité attribué en 2023 pour 3 ans : échéance estimée mars 2027",'DECP'),S0('ao',60,"Avis « maintenance des extincteurs » écarté par la veille : acheteur actif en sécurité",'Veille AO')],
+  contacts:[C('Nadia Benali','Responsable formation','decideur','n.benali@valnord.example','verifie')]}),
+P(6,'Les Berges Hôtels','Paris','75','hotellerie','55.10Z',160,6,{erp:true,opco:'Akto',siren:'916 789 015',statut:'En séquence',
+  signaux:[S0('recrut',15,"11 postes ouverts (réception, étages, nuit)",'France Travail')],
+  contacts:[C('Julien Petit','Directeur des opérations','decideur','j.petit@bergeshotels.example','probable')]}),
+P(7,'Conserverie du Valois','Crépy-en-Valois','60','industrie','10.39A',180,1,{icpe:true,opco:'OCAPIAT',siren:'917 890 126',
+  signaux:[S0('site',40,"Création d'un second site de production (BODACC)",'BODACC')],
+  contacts:[C('Isabelle Roux','Responsable QHSE','decideur','i.roux@conserverie-valois.example','verifie')]}),
+P(8,'Transports Lefèvre Express','Gonesse','95','logistique','49.41A',130,3,{opco:'OPCO Mobilités',siren:'918 901 237',statut:'Nouveau',owner:'',
+  contacts:[]}),
+P(9,'Résidences Les Glycines','Argenteuil','95','sante','87.10A',210,4,{erp:true,opco:'OPCO Santé',siren:'919 012 348',
+  signaux:[S0('web',4,"Guide « Évacuation des établissements de soins » téléchargé (formulaire, consentement)",'Site FORMA\'ST')],
+  contacts:[C('Hélène Marchand','Directrice','decideur','h.marchand@glycines.example','verifie')]}),
+P(10,"Rénov'Habitat Île-de-France",'Créteil','94','btp','43.39Z',75,1,{opco:'Constructys',siren:'920 123 459',owner:'S. Diallo',
+  signaux:[S0('dirigeant',70,"Changement de gérant publié",'BODACC')],
+  contacts:[C('Yannick Moreau','Conducteur de travaux principal','prescripteur','y.moreau@renovhabitat.example','probable')]}),
+P(11,'Boulangeries Marceau','Versailles','78','commerce','10.71C',190,22,{erp:true,opco:'OPCO EP',siren:'921 234 560',statut:'Client',client:true,src:'CRM (client)',
+  signaux:[S0('mac',0,"MAC SST de 12 salariés à prévoir avant le 20/01/2027 (formés le 20/01/2025)",'Historique des formations')],
+  contacts:[C('Aurélie Fontaine','Responsable RH','decideur','a.fontaine@marceau.example','verifie')]}),
+P(12,'Garage Central Nord','Saint-Denis','93','industrie','45.20A',45,1,{opco:'OPCO Mobilités',siren:'922 345 671',statut:'Client',client:true,src:'CRM (client)',owner:'S. Diallo',
+  signaux:[S0('mac',0,"MAC SST de 4 salariés à prévoir avant le 15/03/2027",'Historique des formations')],
+  contacts:[C('Franck Leroy','Gérant','decideur','f.leroy@garagecentralnord.example','verifie')]}),
+P(13,'Distrinord','Roissy-en-France','95','logistique','52.29B',560,1,{icpe:true,opco:'OPCO Mobilités',siren:'923 456 782',statut:'En séquence',
+  signaux:[S0('site',70,"Extension de 20 000 m² inaugurée",'Presse économique'),S0('ouvert',3,"Dernier e-mail ouvert 4 fois, sans réponse",'Séquence')],
+  contacts:[C('Laurent Girard','Directeur de site','decideur','l.girard@distrinord.example','verifie')]}),
+P(14,'Val-Seine Habitat','Nanterre','92','collectivite','68.20A',350,8,{erp:true,opco:'Uniformation',siren:'924 567 893',owner:'S. Diallo',src:'Veille AO',
+  signaux:[S0('ao',30,"Avis « maintenance incendie » écarté par la veille : acheteur actif en sécurité",'Veille AO')],
+  contacts:[C('Service achats','Achats','standard','achats@valseinehabitat.example','verifie')]}),
+P(15,'Laboratoires Hélia','Chartres','28','industrie','20.42Z',270,1,{icpe:true,opco:'OPCO 2i',siren:'925 678 904',statut:'À qualifier',
+  signaux:[S0('qse',20,"Offre d'emploi « Animateur QSE »",'France Travail')],
+  contacts:[]}),
+P(16,'Le Comptoir Gourmand','Lille','59','hotellerie','56.10A',230,14,{erp:true,opco:'Akto',siren:'926 789 015',statut:'Opposé',
+  contacts:[C('Romain Lefort','Responsable réseau','decideur','r.lefort@comptoirgourmand.example','bloque')]}),
+P(17,'Audit & Conseil Vexin','Pontoise','95','prescripteur','69.20Z',25,1,{opco:'Atlas',siren:'927 890 126',statut:'Nouveau',src:'Salon Préventica 2026',
+  contacts:[C('Valérie Brun','Associée, expert-comptable','prescripteur','v.brun@acvexin.example','verifie')]}),
+P(18,'Graphic Seine','Rouen','76','industrie','18.12Z',60,1,{opco:'OPCO 2i',siren:'928 901 237',statut:'En séquence',
+  contacts:[C('Cédric Lambert','Directeur administratif','decideur','c.lambert@graphicseine.example','verifie')]}),
+P(19,'Centre aquatique des Dauphins','Meaux','77','collectivite','93.11Z',55,1,{erp:true,opco:'Uniformation',siren:'929 012 348',owner:'S. Diallo',
+  signaux:[S0('recrut',10,"Recrutement de 6 maîtres-nageurs saisonniers",'France Travail')],
+  contacts:[C('Émilie Garcia','Directrice','decideur','e.garcia@dauphins.example','probable')]}),
+P(20,'Entrepôts Frigorifiques Seine-Est','Rungis','94','logistique','52.10A',140,1,{icpe:true,opco:'OPCO Mobilités',siren:'930 123 459',statut:'En séquence',
+  signaux:[S0('presse',30,"Rachat par un groupe logistique européen",'Presse économique')],
+  contacts:[C('Didier Masson','Responsable maintenance et sécurité','decideur','d.masson@efse.example','verifie')]})
+],
+sequences:[
+ {id:1,nom:'Ouverture de site',mode:'Premier envoi validé',plafond:40,inscrits:14,steps:[
+  {t:'email',j:0,titre:"Accroche « ouverture de site » + besoin chiffré",env:62,ouv:41,rep:4},
+  {t:'linkedin',j:2,titre:'Invitation au décideur (texte préparé)',env:38,ouv:0,rep:3},
+  {t:'appel',j:5,titre:'Appel de découverte (script segment)',env:29,ouv:0,rep:5},
+  {t:'email',j:9,titre:'Preuve : référence comparable et UMFI',env:44,ouv:27,rep:2},
+  {t:'email',j:16,titre:'Message de fin, porte ouverte',env:37,ouv:22,rep:3}]},
+ {id:2,nom:'Recrutement QSE',mode:'Premier envoi validé',plafond:40,inscrits:6,steps:[
+  {t:'email',j:0,titre:'Accroche « vous renforcez la prévention »',env:21,ouv:15,rep:2},
+  {t:'linkedin',j:1,titre:'Invitation au DRH',env:17,ouv:0,rep:1},
+  {t:'email',j:6,titre:'Contenu utile : check-list des formations obligatoires',env:18,ouv:12,rep:1},
+  {t:'appel',j:12,titre:'Appel au DRH',env:11,ouv:0,rep:2}]},
+ {id:3,nom:'Réactivation MAC SST',mode:'Modèle validé (envoi automatique)',plafond:40,inscrits:9,steps:[
+  {t:'email',j:0,titre:"Rappel d'échéance et dates proposées",env:31,ouv:26,rep:11},
+  {t:'appel',j:7,titre:'Appel de confirmation',env:14,ouv:0,rep:6},
+  {t:'email',j:21,titre:'Dernier rappel avant expiration',env:6,ouv:5,rep:2}]},
+ {id:4,nom:'Acheteur public avant marché',mode:'Brouillon (chaque e-mail validé)',plafond:20,inscrits:3,steps:[
+  {t:'email',j:0,titre:'Demande de RDV de découverte (sourçage)',env:8,ouv:6,rep:1},
+  {t:'appel',j:10,titre:'Appel au service formation',env:6,ouv:0,rep:2},
+  {t:'email',j:20,titre:'Partage : guide des obligations des collectivités',env:5,ouv:4,rep:0},
+  {t:'tache',j:30,titre:"Vérifier la publication de l'avis (Veille AO)",env:3,ouv:0,rep:0}]}
+],
+autos:[
+ {id:1,on:true,nom:'Qualifier les nouveaux prospects A',q:'Nouveau prospect',si:'Palier A',alors:'Enrichir, générer le brief, assigner au commercial de la zone, tâche « qualifier » sous 48 h',n:37},
+ {id:2,on:true,nom:'Réactivation MAC SST',q:'Date : MAC SST dans 90 jours',si:'Compte client',alors:'Inscrire en « Réactivation MAC SST », tâche d\'appel à J-60',n:12},
+ {id:3,on:true,nom:'Nouvel établissement BODACC',q:'Signal « nouvel établissement »',si:'Segment cible et département prioritaire',alors:'Créer le prospect, ajouter le signal, rafraîchir SIRENE',n:21},
+ {id:4,on:true,nom:'Recrutement QSE détecté',q:'Signal « recrutement QSE »',si:'Effectif ≥ 50',alors:'Tâche LinkedIn « identifier le DRH », proposer la séquence Recrutement QSE',n:9},
+ {id:5,on:true,nom:'Concurrent attributaire',q:"Avis d'attribution (Veille AO)",si:'Objet formation sécurité',alors:"Ajouter l'acheteur au radar, tâche à 9 mois de l'échéance",n:6},
+ {id:6,on:true,nom:'Reprise « pas maintenant »',q:'Réponse classée « pas maintenant »',si:'Date de reprise trouvée',alors:'Tâche datée, reprise de la séquence à la date',n:8},
+ {id:7,on:true,nom:'RDV fixé',q:'Statut → RDV fixé',si:'—',alors:'Créer l\'opportunité dans le CRM, fiche de préparation, rappel la veille',n:7},
+ {id:8,on:true,nom:'Reprise des opportunités perdues',q:'Webhook CRM : opportunité perdue',si:'Motif ≠ « hors cible »',alors:'Noter le motif et le concurrent, nurturing, reprise à 11 mois',n:2},
+ {id:9,on:true,nom:'Passage en nurturing',q:'Aucune interaction depuis 120 jours',si:'Non opposé',alors:'Inscrire en « Nurturing trimestriel »',n:44},
+ {id:10,on:true,nom:'Digest du lundi',q:'Chaque lundi à 8 h',si:'—',alors:'E-mail : tâches de la semaine, nouveaux A, réponses en attente, RDV',n:46},
+ {id:11,on:true,nom:'Rafraîchissement SIRENE',q:'Chaque nuit',si:'Prospect actif',alors:'Mettre à jour effectif, adresse, état ; retirer les entreprises fermées',n:312},
+ {id:12,on:true,nom:'Purge RGPD',q:'Le 1er de chaque mois',si:'Aucun contact entrant depuis 3 ans',alors:'Préparer la liste, supprimer après validation',n:10},
+ {id:13,on:false,nom:'Campagne « prévention chaleur »',q:'Le 2 mai',si:'Segments logistique et BTP',alors:'Préparer un e-mail saisonnier à valider',n:0},
+ {id:14,on:true,nom:'Montée en palier A',q:'Score passe de B à A',si:'—',alors:'Notifier le responsable (e-mail et Teams)',n:15}
+],
+replies:[
+ {id:1,pid:20,de:'Didier Masson',d:0,obj:'RE: Formation de vos caristes après le rachat',txt:"Bonjour,\n\nOui, ça peut nous intéresser : nous allons intégrer une trentaine de caristes au printemps et il faudra les former (gestes et postures, SST). Pouvez-vous m'appeler jeudi après-midi ?\n\nCordialement,\nD. Masson",cl:'Intéressé',conf:96,info:'Demande un appel jeudi après-midi ; ~30 caristes au printemps',done:false},
+ {id:2,pid:2,de:'Sophie Lemaire',d:1,obj:'RE: Évacuation et nouvelle direction des soins',txt:"Bonjour,\n\nCe sujet est suivi par notre responsable sécurité, M. Arnaud Perrin (a.perrin@cliniquehp.example). Je lui transmets votre message.\n\nBien à vous,\nS. Lemaire",cl:'Mauvais interlocuteur',conf:93,info:'Nouveau contact : Arnaud Perrin, responsable sécurité',nc:{n:'Arnaud Perrin',f:'Responsable sécurité',email:'a.perrin@cliniquehp.example'},done:false},
+ {id:3,pid:18,de:'Cédric Lambert',d:1,obj:'RE: Plan de formation 2027',txt:"Bonjour,\n\nPas pour le moment, nous bouclons le plan de formation. Revenez vers moi début mars.\n\nC. Lambert",cl:'Pas maintenant',conf:91,info:'Date de reprise : 02/03/2027',reprise:'2027-03-02',done:false},
+ {id:4,pid:6,de:'Julien Petit',d:2,obj:'Réponse automatique : absent',txt:"Je suis absent jusqu'au 25 novembre inclus. Pour toute urgence, contactez la réception.",cl:'Absence',conf:99,info:'Pause de la séquence jusqu\'au 26/11/2026',done:false},
+ {id:5,pid:4,de:'Pascal Durand',d:3,obj:'RE: Vos nouveaux opérateurs',txt:"Bonjour, nous travaillons déjà avec un organisme pour le SST. Merci.",cl:'Déjà équipé',conf:88,info:'Prestataire en place ; reprise proposée à 11 mois',done:false},
+ {id:6,pid:16,de:'Romain Lefort',d:6,obj:'RE: Formation de vos équipes',txt:"Merci de ne plus m'écrire.",cl:'Opposition',conf:99,info:'Opposition enregistrée sur l\'adresse et le domaine',done:true}
+],
+tasks:[
+ {id:1,t:'appel',pid:20,titre:'Appeler Didier Masson (demande jeudi après-midi)',ech:2,fait:false},
+ {id:2,t:'linkedin',pid:1,titre:'Inviter Claire Vasseur (DRH) sur LinkedIn',ech:0,fait:false,txt:''},
+ {id:3,t:'appel',pid:11,titre:'Appeler Aurélie Fontaine : MAC SST de 12 salariés avant le 20/01',ech:0,fait:false},
+ {id:4,t:'qualifier',pid:15,titre:'Trouver le décideur (QSE ou RH) chez Laboratoires Hélia',ech:0,fait:false},
+ {id:5,t:'appel',pid:13,titre:'Appeler Laurent Girard (e-mail ouvert 4 fois)',ech:0,fait:false},
+ {id:6,t:'linkedin',pid:3,titre:'Message LinkedIn à Thomas Garnier (8 ouvertures en 2027)',ech:1,fait:false},
+ {id:7,t:'email',pid:5,titre:'Valider le 1er e-mail « Acheteur public avant marché »',ech:0,fait:false},
+ {id:8,t:'appel',pid:9,titre:'Appeler Hélène Marchand (guide téléchargé)',ech:-1,fait:false}
+],
+oppositions:['r.lefort@comptoirgourmand.example','@concurrent-formation.example','m.dupuis@exemple-btp.example'],
+weights:{fit:45,int:35,acc:20,seuilA:70,seuilB:50,tauxSST:12,prio:'95,78,92,93,94,75,77,91,60'},
+crmLog:[
+ {d:'18/11/2026 08:02',ev:'client.cree',obj:'Boulangeries Marceau (synchronisation initiale)',ok:true},
+ {d:'17/11/2026 16:40',ev:'rdv.fixe',obj:'Groupe Sanitaire Ouest → opportunité créée',ok:true},
+ {d:'17/11/2026 11:15',ev:'opposition.enregistree',obj:'r.lefort@comptoirgourmand.example',ok:true}
+],
+historique:[
+ {id:1,nom:'Boulangeries Marceau',pid:11,prest:'MAC SST',date:'2025-01-20',n:12,formateur:'Formateur A',src:'Import tableur'},
+ {id:2,nom:'Garage Central Nord',pid:12,prest:'SST initial',date:'2025-03-15',n:4,formateur:'Formateur B',src:'Import tableur'},
+ {id:3,nom:'Boulangeries Marceau',pid:11,prest:"Exercice d'évacuation",date:'2026-06-10',n:22,formateur:'Formateur A',src:'Saisie'},
+ {id:4,nom:'Boulangeries Marceau',pid:11,prest:'Manipulation des extincteurs',date:'2025-12-01',n:30,formateur:'Formateur B',src:'Saisie'},
+ {id:5,nom:'Garage Central Nord',pid:12,prest:"Exercice d'évacuation",date:'2026-04-02',n:1,formateur:'Formateur B',src:'Saisie'},
+ {id:6,nom:'Groupe Sanitaire Ouest',pid:0,prest:'Gestes et postures',date:'2025-02-03',n:24,formateur:'Formateur A',src:'Import tableur'},
+ {id:7,nom:'Groupe Sanitaire Ouest',pid:0,prest:'MAC SST',date:'2025-05-12',n:9,formateur:'Formateur A',src:'Import tableur'}
+],
+boites:[
+ {adr:'j.morel@contact.formast-exemple.fr',cnx:'Microsoft Graph',cap:40,auj:18,reb:'0,9 %',etat:'ok'},
+ {adr:'s.diallo@contact.formast-exemple.fr',cnx:'Microsoft Graph',cap:30,auj:7,reb:'1,6 %',etat:'ok'},
+ {adr:'formation@contact.formast-exemple.fr',cnx:'SMTP / IMAP (repli)',cap:20,auj:0,reb:'—',etat:'warn'}
+],
+file:[
+ {id:1,pid:13,a:'l.girard@distrinord.example',obj:'Preuve : référence comparable et UMFI',quand:'19/11/2026 09:04',boite:0,st:'Programmé'},
+ {id:2,pid:2,a:'s.lemaire@cliniquehp.example',obj:'Évacuation horizontale : 3 questions',quand:'19/11/2026 09:41',boite:0,st:'Programmé'},
+ {id:3,pid:6,a:'j.petit@bergeshotels.example',obj:'Accueil sécurité de vos nouveaux salariés',quand:'26/11/2026 10:12',boite:1,st:'En pause (absence)'}
+],
+mailTest:true, crmMode:'autonome',
+nbaDone:[], doneToday:2, aiCols:['angle'],
+niveaux:{recherche:'auto',enrich:'auto',redac:'proposer',reactiv:'auto',prospect:'proposer',linkedin:'manuel',tri:'auto',rdv:'proposer',crm:'auto'},
+limites:{budget:40,maxAuto:30},
+journal:[
+ {h:'02:04',ic:'radar',txt:"BODACC : 21 nouveaux établissements lus, 3 retenus dans vos segments (dont Conserverie du Valois)."},
+ {h:'02:20',ic:'users',txt:"SIRENE : 312 fiches rafraîchies, 2 entreprises fermées retirées des séquences."},
+ {h:'03:05',ic:'spark',txt:"5 brouillons d'e-mails préparés pour des prospects A, en attente de votre validation."},
+ {h:'07:40',ic:'inbox',txt:"2 réponses relevées et classées ; 1 opposition appliquée sur tous les canaux."},
+ {h:'08:00',ic:'mail',txt:"Réactivation MAC SST : 3 e-mails envoyés automatiquement (modèle validé, mode test)."}
+],
+campagnes:[
+ {id:1,mois:'Décembre 2026',titre:'Bilan sécurité et plan de formation 2027',seg:'Clients et prospects A',canaux:'E-mail · post LinkedIn',etat:'Prête',cible:84},
+ {id:2,mois:'Janvier 2027',titre:'Budgets 2027 : les formations obligatoires à prévoir',seg:'PME de 50 à 250 salariés',canaux:'E-mail · guide PDF à télécharger',etat:'Brouillon',cible:212},
+ {id:3,mois:'Février 2027',titre:'Simulateur « Combien de SST vous faut-il ? »',seg:'Tous segments',canaux:'Page web · formulaire · LinkedIn',etat:'À préparer',cible:0},
+ {id:4,mois:'Mars 2027',titre:'Recyclages MAC SST du printemps',seg:'Clients (historique)',canaux:'E-mail · appel',etat:'À préparer',cible:23},
+ {id:5,mois:'Mai 2027',titre:'Prévention chaleur et travail en extérieur',seg:'Logistique, BTP',canaux:'E-mail · post LinkedIn',etat:'À préparer',cible:96},
+ {id:6,mois:'Juin 2027',titre:'Saisonniers : accueil sécurité en une demi-journée',seg:'Hôtellerie, commerce, centres aquatiques',canaux:'E-mail',etat:'À préparer',cible:58},
+ {id:7,mois:'Septembre 2027',titre:'Rentrée : former les nouveaux arrivants',seg:'Logistique, santé',canaux:'E-mail · LinkedIn',etat:'À préparer',cible:140},
+ {id:8,mois:'Octobre 2027',titre:'Semaine européenne de la santé et sécurité au travail',seg:'Tous segments',canaux:'Webinaire de 30 min · LinkedIn',etat:'À préparer',cible:0},
+ {id:9,mois:'Novembre 2027',titre:"Fin d'année : le budget formation à consommer",seg:'Clients et prospects B',canaux:'E-mail · appel',etat:'À préparer',cible:120}
+],
+chat:[], nextId:100
+};}
+
+let S;
+const KEY='prospection-maquette-v6';
+try{ S = JSON.parse(localStorage.getItem(KEY)) }catch(e){}
+if(!S || !S.prospects) S = seed();
+const save=()=>{ try{ localStorage.setItem(KEY, JSON.stringify(S)) }catch(e){} };
+const ui = {view:'journee', pview:'liste', sv:'tous', pal:null, pid:1, canal:'email', ton:'direct', consigne:'', cidx:0, gen:null, seq:1, rep:1, tfilter:'tous', session:null, imp:null, filt:{q:'',tier:'',seg:'',dep:'',statut:'',sig:false,nc:false}, sel:new Set(), pending:null};
+
+/* ============ Calculs ============ */
+const W = ()=>S.weights;
+const prioDeps = ()=>W().prio.split(/[ ,;]+/).filter(Boolean);
+function fitScore(p){
+  let s = (SEGMENTS[p.seg]||{w:5}).w;
+  const e=p.eff; s += e>=50&&e<=1000?30: e>1000?22: e>=20?18:5;
+  s += p.sites>10?15: p.sites>1?10:0;
+  s += prioDeps().includes(p.dep)?15:5;
+  if(p.icpe) s+=10; if(p.erp) s+=5;
+  return Math.min(100,s);
+}
+function intScore(p){
+  let s=0; for(const g of p.signaux){const d=SIGNAUX[g.t]; if(!d) continue; s += d.w*Math.pow(.5,g.d/d.hl);}
+  return Math.min(100,Math.round(s*1.6));
+}
+function accScore(p){
+  let s=0; const dec=p.contacts.find(c=>c.role==='decideur');
+  if(dec) s+=40; else if(p.contacts.some(c=>c.role==='prescripteur')) s+=20;
+  if(p.contacts.some(c=>c.es==='verifie' && c.role!=='standard')) s+=30; else if(p.contacts.some(c=>c.es==='probable')) s+=15;
+  if(p.contacts.some(c=>c.tel)) s+=15;
+  if(p.client) s+=15;
+  return Math.min(100,s);
+}
+function score(p){
+  const w=W(), f=fitScore(p), i=intScore(p), a=accScore(p);
+  const t=Math.round((w.fit*f+w.int*i+w.acc*a)/Math.max(1,(+w.fit + +w.int + +w.acc)));
+  return {f,i,a,t,tier: t>=w.seuilA?'A': t>=w.seuilB?'B':'C'};
+}
+function besoin(p){
+  const sst=Math.ceil(p.eff*W().tauxSST/100), sSess=Math.ceil(sst/10);
+  const gpN=Math.round(p.eff*((SEGMENTS[p.seg]||{gp:0}).gp)), gSess=Math.ceil(gpN/10);
+  const exo=2*Math.max(1,Math.min(p.sites,20));
+  const an1=sSess*PRIX.sst+gSess*PRIX.gp+exo*PRIX.incendie;
+  const rec=Math.ceil(sSess/2)*PRIX.sst*.55+exo*PRIX.incendie;
+  return {sst,sSess,gpN,gSess,exo,an1,rec,opcoAide:p.eff<50};
+}
+const topSig = p => [...p.signaux].sort((a,b)=>(SIGNAUX[b.t].w*Math.pow(.5,b.d/SIGNAUX[b.t].hl))-(SIGNAUX[a.t].w*Math.pow(.5,a.d/SIGNAUX[a.t].hl)))[0];
+const byId = id => S.prospects.find(p=>p.id===+id);
+const mainContact = p => p.contacts.find(c=>c.role==='decideur'&&c.es!=='bloque') || p.contacts.find(c=>c.es!=='bloque');
+function explain(p){
+  const s=score(p), g=topSig(p), c=mainContact(p), parts=[];
+  parts.push(`${SEGMENTS[p.seg].l.toLowerCase()}, ${p.eff} salariés${p.sites>1?` sur ${p.sites} sites`:''}${p.icpe?', site ICPE':''}${p.erp?', ERP':''}`);
+  if(g) parts.push(`${SIGNAUX[g.t].l.toLowerCase()} il y a ${g.d===0?"moins d'un jour":g.d+' j'}`); else parts.push('aucun signal récent');
+  parts.push(c? `${c.role==='decideur'?'décideur':'contact'} identifié (${c.f.toLowerCase()})${c.es==='verifie'?', e-mail vérifié':c.es==='probable'?', e-mail probable':', sans e-mail'}`:'aucun contact identifié');
+  return `Palier ${s.tier} : ${parts.join(' ; ')}.`;
+}
+
+/* ============ Rédaction (simulation de l'IA) ============ */
+function accroche(p,g,b){
+  if(!g) return `Dans ${SEGMENTS[p.seg].l.toLowerCase()}, les obligations de formation sécurité (SST, incendie, manutention) pèsent lourd quand les équipes tournent.`;
+  switch(g.t){
+    case 'site': return `J'ai vu que ${p.nom} ouvre un nouvel établissement. Avant l'arrivée des équipes, c'est le bon moment pour organiser la formation sécurité : sauveteurs secouristes, consignes incendie et exercice d'évacuation propres au nouveau bâtiment.`;
+    case 'qse': return `Vous recrutez un(e) responsable HSE : la prévention prend de l'ampleur chez ${p.nom}. Nous pouvons prendre en charge les formations obligatoires dès maintenant, puis travailler avec votre futur(e) responsable.`;
+    case 'recrut': return `Avec de nombreux postes ouverts en ce moment, vous allez accueillir beaucoup de nouveaux salariés. Former à l'accueil sécurité et aux gestes et postures dès les premières semaines réduit nettement les accidents.`;
+    case 'dirigeant': return `Vous avez récemment pris vos fonctions : c'est souvent l'occasion de faire le point sur les formations obligatoires et leurs échéances.`;
+    case 'marche': return `Votre marché de formation sécurité arrive à échéance au printemps. Nous aimerions comprendre vos besoins et vos retours d'expérience avant la rédaction du prochain cahier des charges.`;
+    case 'ao': return `${p.nom} lance régulièrement des consultations liées à la sécurité. Nous intervenons auprès des organismes publics pour les formations SST, incendie et évacuation, en bons de commande ou en accord-cadre.`;
+    case 'mac': return `${g.txt.replace(/^MAC SST de/,'Le maintien et actualisation des compétences (MAC SST) de')} : sans recyclage, les certificats ne sont plus valables.`;
+    case 'presse': return `J'ai lu l'annonce : ${g.txt.charAt(0).toLowerCase()+g.txt.slice(1)}. Une telle évolution s'accompagne presque toujours de nouvelles équipes à former et de consignes de sécurité à revoir.`;
+    case 'web': return `Merci d'avoir téléchargé notre guide sur l'évacuation des établissements de soins. Les exercices avec des personnes non autonomes posent souvent les mêmes questions : qui guide, qui vérifie, comment évacuer horizontalement.`;
+    default: return `La sécurité de vos équipes est un sujet que nous suivons de près dans votre secteur.`;
+  }
+}
+function lignesBesoin(p,b){
+  let t=`Pour un effectif d'environ ${p.eff} personnes, l'INRS recommande ${b.sst} sauveteurs secouristes du travail, soit ${b.sSess} session${b.sSess>1?'s':''}, puis un recyclage tous les 24 mois.`;
+  t+=` Les exercices d'évacuation sont aussi à organiser tous les 6 mois${p.icpe?', un point sensible pour un site classé ICPE':p.erp?', avec un public à guider':''}.`;
+  if(b.opcoAide) t+=` Avec moins de 50 salariés, ces formations sont en général finançables par votre ${p.opco||'OPCO'}.`;
+  return t;
+}
+function prenom(c){ return c&&c.role!=='standard' ? c.n : ''; }
+function gen(p,c,canal,ton,consigne){
+  const b=besoin(p), g=topSig(p), court=/court/i.test(consigne), umfi=/umfi|mobile|camion/i.test(consigne);
+  const salut = ton==='institutionnel' ? 'Madame, Monsieur,' : (c&&c.role!=='standard' ? `Bonjour ${c.n},` : 'Bonjour,');
+  const preuve = `Nous intervenons partout en France avec un interlocuteur unique, des formateurs sapeurs-pompiers et une unité mobile de formation incendie. Une enseigne nationale de 1 200 magasins nous confie déjà ses formations.`;
+  const umfiTxt = `Notre unité mobile (UMFI) se déplace sur votre parking : extinction sur feux réels au bac à flammes, sans immobiliser vos équipes plus d'une demi-journée.`;
+  const rgpd = `\n\n—\nVos coordonnées professionnelles proviennent de : ${p.src}. FORMA'ST les utilise pour vous présenter ses formations, pendant 3 ans au plus.\nPour ne plus recevoir nos messages : [lien d'opposition en un clic]`;
+  const sign = `\n\n[Prénom Nom]\nFORMA'ST – Formation santé et sécurité au travail\n[Téléphone]`;
+  if(canal==='email'){
+    const objets={site:`Formation sécurité de votre nouveau site`,qse:`Votre recrutement HSE et les formations obligatoires`,recrut:`Accueil sécurité de vos nouveaux salariés`,dirigeant:`Vos formations sécurité : le point à votre arrivée`,marche:`Votre prochain marché de formation sécurité`,ao:`Formations SST et incendie pour ${p.nom}`,mac:`Échéance MAC SST de vos salariés`,presse:`${p.nom} : former les nouvelles équipes`,web:`Suite à votre guide sur l'évacuation`};
+    const obj = objets[g?.t] || `Formations SST et incendie pour ${p.nom}`;
+    let corps = `${salut}\n\n${accroche(p,g,b)}`;
+    if(!court) corps += `\n\n${lignesBesoin(p,b)}`;
+    if(umfi) corps += `\n\n${umfiTxt}`;
+    if(!court && ton!=='direct') corps += `\n\n${preuve}`;
+    corps += `\n\n${g?.t==='marche'?'Seriez-vous disponible pour un échange de 20 minutes, dans le cadre de votre sourçage ?':'Seriez-vous disponible 15 minutes la semaine prochaine pour en parler ?'}`;
+    corps += (ton==='institutionnel'?`\n\nJe vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.`:`\n\nBien cordialement,`) + sign + rgpd;
+    return {titre:`Objet : ${obj}`, texte:corps};
+  }
+  if(canal==='linkedin'){
+    const n=prenom(c)?prenom(c).split(' ')[0]:'';
+    const courts={site:`Je vois que ${p.nom} ouvre un nouveau site : nous formons les équipes avant l'ouverture (SST, incendie, évacuation).`,qse:`Je vois que vous renforcez la prévention chez ${p.nom}.`,recrut:`Je vois que ${p.nom} recrute beaucoup en ce moment.`,dirigeant:`Félicitations pour votre prise de fonction.`,presse:`J'ai lu l'actualité de ${p.nom}, félicitations.`,mac:`Les certificats SST de vos équipes arrivent à échéance.`,marche:`Nous suivons les formations sécurité des collectivités.`};
+    let t = `Bonjour${n?' '+n:''}, je travaille chez FORMA'ST (formation SST, incendie, gestes et postures). ${courts[g?.t]||''} Ravi d'échanger si le sujet vous concerne.`;
+    return {titre:`Invitation LinkedIn · ${t.length} / 300 caractères · à envoyer vous-même`, texte:t};
+  }
+  if(canal==='appel'){
+    const t=`OUVERTURE (20 s)
+« Bonjour${c&&c.role!=='standard'?' '+c.n:''}, [Prénom] de FORMA'ST, organisme de formation santé-sécurité. ${g?'Je vous appelle parce que '+(g.t==='site'?'vous ouvrez un nouvel établissement':g.t==='qse'?'vous recrutez un responsable HSE':g.t==='mac'?'les certificats SST de vos salariés arrivent à échéance':g.t==='recrut'?'vous recrutez beaucoup en ce moment':'nous avons vu votre actualité')+'.':'Je vous appelle au sujet des formations sécurité obligatoires.'} Vous avez deux minutes ? »
+
+DÉCOUVERTE
+1. Combien de sauveteurs secouristes avez-vous aujourd'hui, et quand ont-ils été formés ?
+2. À quand remonte votre dernier exercice d'évacuation ? Qui joue le rôle de guide et de serre-file ?
+3. Qui décide et qui finance les formations (RH, QSE, direction de site, OPCO) ?
+
+BESOIN ESTIMÉ À ÉVOQUER
+${b.sst} SST recommandés (${b.sSess} session${b.sSess>1?'s':''}), ${b.exo} exercice${b.exo>1?'s':''} incendie par an${b.gpN?`, ${b.gpN} salariés exposés à la manutention`:''}.
+
+OBJECTIONS
+· « On a déjà un prestataire » → « Très bien. Quand se termine le contrat ? Je vous propose un comparatif sur une session pilote. »
+· « Pas de budget » → « ${b.opcoAide?'Avec moins de 50 salariés, votre OPCO finance en général ces formations.':'Le SST et les exercices sont obligatoires ; nous pouvons étaler sur l\'année.'} »
+· « On le fait en interne » → « Avez-vous un formateur habilité INRS ? Sinon, les certificats ne sont pas valables. »
+· « Envoyez-moi une documentation » → « Avec plaisir. Pour l'adapter, combien de sites et de salariés sont concernés ? »
+· « Rappelez plus tard » → « Bien sûr. Plutôt début ou fin de mois ? » (date notée, tâche créée)
+· « Ce n'est pas moi » → « Qui s'en occupe chez vous ? Je peux dire que je viens de votre part ? »
+
+CONCLUSION
+Proposer un RDV de 30 minutes (Teams ou sur site) et deux créneaux précis.`;
+    return {titre:'Script d\'appel', texte:t};
+  }
+  // relance
+  const t=`${salut}\n\nJe reviens vers vous avec un élément concret : pour ${p.sites>1?'un réseau de '+p.sites+' sites':'un site'} comme le vôtre, nous organisons en général ${b.sSess} session${b.sSess>1?'s':''} SST et ${b.exo} exercice${b.exo>1?'s':''} d'évacuation par an, avec un seul interlocuteur et des dates calées sur vos plannings.\n\nJe peux vous envoyer une proposition chiffrée sur cette base. Est-ce le bon moment, ou préférez-vous que je revienne vers vous au premier trimestre ?\n\nBien cordialement,${sign}${rgpd}`;
+  return {titre:'Objet : RE: '+(g?SIGNAUX[g.t].l:'Formations sécurité'), texte:t};
+}
+function brief(p){
+  const b=besoin(p), g=topSig(p), s=score(p);
+  return [
+    `${p.nom} (${p.ville}, ${p.dep}) : ${SEGMENTS[p.seg].l.toLowerCase()}, NAF ${p.naf}, environ ${p.eff} salariés${p.sites>1?' sur '+p.sites+' sites':''}. Source : ${p.src}, SIRENE.`,
+    `Risques métier : ${p.seg==='logistique'?'manutention, engins, quais, rotation du personnel':p.seg==='sante'?'TMS des soignants, RPS, évacuation de personnes non autonomes':p.seg==='industrie'?'machines, incendie, produits':p.seg==='commerce'?'public, manutention en réserve, personnel jeune':p.seg==='collectivite'?'agents techniques, ERP communaux':p.seg==='btp'?'chantiers, chutes, manutention':'accueil du public, horaires décalés'}${p.icpe?' ; site ICPE (risque incendie renforcé)':''}.`,
+    `Obligations : ${b.sst} SST recommandés, MAC tous les 24 mois, exercices d'évacuation tous les 6 mois${b.gpN?', formation manutention pour environ '+b.gpN+' salariés':''}.`,
+    g?`Signal : ${g.txt} (${g.src}, il y a ${g.d} j).`:'Signal : aucun. À travailler sur le segment ou à laisser en nurturing.',
+    `Angle conseillé : ${g?.t==='site'||g?.t==='presse'?'formation des équipes avant ouverture, interlocuteur unique':g?.t==='marche'?'rendez-vous de sourçage avant publication':g?.t==='mac'?'échéance de recyclage, dates proposées':p.seg==='sante'?'évacuation horizontale et gestes et postures soignants':'obligations chiffrées et UMFI'}. Potentiel estimé : ${eur(b.an1)} la 1re année (tarifs d'exemple).`
+  ].join('\n');
+}
+
+/* ============ Rendu ============ */
+const $ = s => document.querySelector(s);
+const ICONS={
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.5 3.5 5.2"/>',
+ check:'<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
+ inbox:'<path d="M3.5 13.5l2.4-8h12.2l2.4 8v5a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 18.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/>',
+ spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+ chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+ upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>',
+ clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+ radar:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6-6"/>',
+ calendar:'<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+ steps:'<path d="M5 6h14M5 12h10M5 18h6"/><circle cx="19" cy="18" r="2"/>',
+ zap:'<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
+ bot:'<rect x="4.5" y="7.5" width="15" height="11" rx="3"/><path d="M12 3.5v4M9 12.5h.01M15 12.5h.01M9.5 15.5h5"/>',
+ mail:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+ sliders:'<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+ shield:'<path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.2-7.5 9.5-4.3-1.3-7.5-4.9-7.5-9.5V6z"/><path d="M9 12l2 2 4-4"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ bell:'<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5"/><path d="M10 19.5a2 2 0 0 0 4 0"/>',
+ phone:'<path d="M5 3.5h3.5l1.5 4.5-2.2 1.5a11 11 0 0 0 6.7 6.7L16 14l4.5 1.5V19a1.5 1.5 0 0 1-1.6 1.5A16.5 16.5 0 0 1 3.5 5.1 1.5 1.5 0 0 1 5 3.5z"/>',
+ pin:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.5"/>',
+ kanban:'<rect x="3.5" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="16.5" y="4" width="4" height="13" rx="1.5"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+ trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+ file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>'
+};
+const ic=(n,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
+const VIEWS = [
+  ['grp','Au quotidien'],
+  ['journee','Ma journée', ()=>nbaList().length, 'sun'],
+  ['prospects','Prospects', ()=>S.prospects.filter(p=>!['Écarté','Opposé','Client'].includes(p.statut)).length, 'users'],
+  ['taches','Tâches', ()=>S.tasks.filter(t=>!t.fait&&t.ech<=0).length, 'check'],
+  ['reponses','Réponses', ()=>S.replies.filter(r=>!r.done).length, 'inbox'],
+  ['assistant','Assistant', null, 'spark'],
+  ['tableau','Statistiques', null, 'chart'],
+  ['grp','Alimenter'],
+  ['import','Import de bases', null, 'upload'],
+  ['historique','Historique des formations', ()=>S.historique.filter(h=>echeance(h).etat!=='ok'&&!h.relance).length, 'clock'],
+  ['sources','Sources et signaux', null, 'radar'],
+  ['grp','Automatiser'],
+  ['campagnes','Campagnes', ()=>S.campagnes.filter(c=>c.etat==='Brouillon').length, 'calendar'],
+  ['sequences','Séquences', null, 'steps'],
+  ['automatisations','Automatisations', ()=>S.autos.filter(a=>a.on).length, 'zap'],
+  ['pilote','Pilote automatique', null, 'bot'],
+  ['messagerie','Messagerie', ()=>S.file.filter(m=>m.st==='Programmé').length, 'mail'],
+  ['grp','Paramètres'],
+  ['score','Réglage du score', null, 'sliders'],
+  ['conformite','Conformité RGPD', null, 'shield'],
+  ['crm','Intégration CRM', null, 'link']
+];
+function nav(){
+  $('#nav').innerHTML = `<div class="brand"><b>Prospection</b><span>FORMA'ST · outil interne</span></div>` +
+    VIEWS.map(v=> v[0]==='grp' ? `<div class="grp">${v[1]}</div>` :
+      `<a href="#${v[0]}" class="${ui.view===v[0]||(ui.view==='fiche'&&v[0]==='prospects')?'on':''}"><span class="lbl">${ic(v[3])}<span>${v[1]}</span></span>${v[2]?`<span class="badge">${v[2]()}</span>`:''}</a>`).join('') +
+    `<div class="foot"><kbd>Ctrl</kbd> <kbd>K</kbd> recherche · <kbd>J</kbd> <kbd>K</kbd> fiche suivante / précédente</div>`;
+}
+function topbar(){
+  const n=S.replies.filter(r=>!r.done).length;
+  return `<div class="topbar"><button class="search" data-act="pal" aria-label="Rechercher">${ic('search')}<span>Rechercher un prospect, un écran, une action…</span><kbd>Ctrl K</kbd></button>
+  <div class="row" style="flex-wrap:nowrap"><button class="iconbtn" data-act="theme" aria-label="Changer de thème" title="Thème clair / sombre">${ic('moon')}</button>
+  <a class="iconbtn" href="#reponses" aria-label="${n} réponses à traiter" title="Réponses à traiter">${ic('bell')}${n?`<span class="dotc">${n}</span>`:''}</a>
+  <span class="avatar" title="J. Morel (fictif)">JM</span></div></div>`;
+}
+function head(t,sub,right=''){ return `<div class="top"><div class="t"><h1>${t}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="row">${right}<span class="demo">Maquette · données fictives</span></div></div>`; }
+const tierChip = s => `<span class="tier ${s.tier}" title="Palier ${s.tier}">${s.tier}</span>`;
+const statutChip = st => { const m={'Nouveau':'','À qualifier':'warn','À contacter':'info','En séquence':'info','A répondu':'ok','RDV fixé':'ok','Transmis au CRM':'ok','Client':'ok','Pas maintenant':'warn','Écarté':'','Opposé':'bad'}; return `<span class="chip ${m[st]||''}">${esc(st)}</span>`; };
+const esChip = es => ({verifie:'<span class="chip ok">vérifié</span>',probable:'<span class="chip warn">probable</span>',absent:'<span class="chip">à trouver</span>',bloque:'<span class="chip bad">opposé</span>',invalide:'<span class="chip bad">invalide</span>'}[es]||'');
+
+function render(){
+  nav();
+  const v = ui.view;
+  const html = ({journee,tableau,prospects,fiche,taches,reponses,assistant,import:imp,historique,messagerie,campagnes,pilote,sources,sequences,automatisations,score:scoreV,conformite,crm})[v]?.() ?? journee();
+  $('#view').innerHTML = topbar() + html;
+  if(v==='fiche') majQualite();
+  if(v==='assistant'){ const c=$('#chatbox'); if(c) c.scrollTop=c.scrollHeight; }
+}
+function go(v,pid){ if(pid) ui.pid=+pid; ui.gen=null; if(location.hash!=='#'+v){ ui.view=v; location.hash=v; } else { ui.view=v; render(); } window.scrollTo(0,0); }
+window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); ui.view = h||'journee'; render(); });
+
+/* ---- Tableau de bord ---- */
+function tableau(){
+  const act=S.prospects.filter(p=>!['Écarté','Opposé','Client'].includes(p.statut));
+  const sc=act.map(p=>({p,s:score(p)}));
+  const A=sc.filter(x=>x.s.tier==='A');
+  const pot=A.reduce((t,x)=>t+besoin(x.p).an1,0);
+  const sig=S.prospects.flatMap(p=>p.signaux.map(g=>({p,g}))).sort((a,b)=>a.g.d-b.g.d).slice(0,6);
+  const fun=[['Prospects actifs',412],['Contactés',186],['Ont répondu',23],['RDV fixés',9],['Opportunités CRM',5],['Gagnés',2]];
+  const macs=S.prospects.filter(p=>p.signaux.some(g=>g.t==='mac'));
+  return head('Statistiques','Novembre 2026 · objectif : 10 RDV qualifiés par mois') + `
+  <div class="kpis">
+    <div class="kpi"><span class="l">Prospects actifs</span><span class="v">${act.length}</span><span class="small muted">dans la maquette</span></div>
+    <div class="kpi"><span class="l">Palier A</span><span class="v">${A.length}</span><span class="small muted">priorité de la semaine</span></div>
+    <div class="kpi"><span class="l">Réponses à traiter</span><span class="v">${S.replies.filter(r=>!r.done).length}</span><span class="small muted">triées par l'IA</span></div>
+    <div class="kpi"><span class="l">RDV ce mois</span><span class="v">7 <span class="small muted">/ 10</span></span><div class="bar ok"><i style="width:70%"></i></div></div>
+    <div class="kpi"><span class="l">Potentiel des A (1re année)</span><span class="v">${eur(pot)}</span><span class="small muted">tarifs d'exemple</span></div>
+    <div class="kpi"><span class="l">Coût IA du mois</span><span class="v">18,40 €</span><span class="small muted">612 générations</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="row between"><h2>Signaux récents</h2><a href="#sources" class="small">Toutes les sources</a></div>
+      <div class="list">${sig.map(({p,g})=>`<div class="li"><span class="dot ${g.t==='mac'||g.t==='site'||g.t==='qse'?'ok':g.t==='ouvert'?'warn':'info'}"></span><div class="grow"><div><a href="#" data-act="open" data-id="${p.id}"><b>${esc(p.nom)}</b></a> · <span class="muted">${SIGNAUX[g.t].l}</span></div><div class="small muted">${esc(g.txt)} · ${esc(g.src)} · ${g.d===0?"aujourd'hui":'il y a '+g.d+' j'}</div></div>${tierChip(score(p))}</div>`).join('')}</div>
+    </div>
+    <div class="card"><h2>Entonnoir du mois</h2>
+      <div class="funnel">${fun.map(([l,n])=>`<div class="fr"><span>${l}</span><div><div class="fb" style="width:${Math.max(3,n/412*100)}%"></div></div><b>${n}</b></div>`).join('')}</div>
+      <p class="small muted">Taux de réponse 12,4 % · RDV / contactés 4,8 % · meilleure séquence : Réactivation MAC SST (35 % de réponses)</p>
+    </div>
+  </div>
+  <div class="grid g2e">
+    <div class="card"><h2>Tâches du jour</h2><div class="list">${S.tasks.filter(t=>!t.fait&&t.ech<=0).slice(0,4).map(t=>`<div class="li"><span class="ty ${t.t==='qualifier'?'tache':t.t}">${t.t}</span><div class="grow small">${esc(t.titre)}</div></div>`).join('')}</div><a class="btn sm sec" href="#taches">Ouvrir la file</a></div>
+    <div class="card"><h2>Recyclages clients à venir</h2><div class="list">${macs.map(p=>`<div class="li"><span class="dot ok"></span><div class="grow small"><a href="#" data-act="open" data-id="${p.id}">${esc(p.nom)}</a><br><span class="muted">${esc(p.signaux.find(g=>g.t==='mac').txt)}</span></div></div>`).join('')}</div></div>
+    <div class="card"><h2>Taux de transformation</h2>${[['Contacté → réponse',12.4],['Réponse → RDV',39],['RDV → transmis au CRM',82]].map(([l,v])=>`<div class="fc"><span class="small">${l}</span><div class="bar info" style="height:10px"><i style="width:${v}%"></i></div><b style="text-align:right">${String(v).replace('.',',')} %</b></div>`).join('')}<p class="small muted" style="margin:6px 0 0">Temps commercial par RDV obtenu : 2 h 40. Délai moyen du premier contact au RDV : 17 jours.</p></div>
+    <div class="card"><h2>Rendement des sources</h2><table><thead><tr><th>Source</th><th>RDV</th><th>Coût / RDV</th></tr></thead><tbody>
+      <tr><td>Base clients (recyclages)</td><td>4</td><td>0,90 €</td></tr><tr><td>Signaux BODACC</td><td>2</td><td>3,10 €</td></tr><tr><td>Veille AO / DECP</td><td>1</td><td>2,40 €</td></tr><tr><td>Fichier CCI</td><td>0</td><td>—</td></tr></tbody></table></div>
+  </div>`;
+}
+
+/* ---- Prospects ---- */
+function filtered(){
+  const f=ui.filt, q=f.q.toLowerCase();
+  return S.prospects.map(p=>({p,s:score(p)})).filter(({p,s})=>
+    (!q || (p.nom+' '+p.ville+' '+p.naf+' '+p.contacts.map(c=>c.n).join(' ')).toLowerCase().includes(q)) &&
+    (!f.tier || s.tier===f.tier) && (!f.seg || p.seg===f.seg) && (!f.dep || p.dep===f.dep) && (!f.statut || p.statut===f.statut) && (!f.sig || p.signaux.length) && (!f.nc || !mainContact(p) || mainContact(p).role==='standard')
+  ).sort((a,b)=>b.s.t-a.s.t);
+}
+function prospects(){
+  const rows=filtered(), f=ui.filt, deps=[...new Set(S.prospects.map(p=>p.dep))].sort();
+  const opt=(arr,v)=>arr.map(([k,l])=>`<option value="${k}" ${v===k?'selected':''}>${l}</option>`).join('');
+  const SV=[['tous','Tous'],['mesA','Palier A'],['signaux','Avec signal'],['sanscontact','Sans contact'],['public','Acheteurs publics'],['clients','Clients']];
+  return head('Prospects', `${rows.length} résultat${rows.length>1?'s':''} · triés par score`, `<div class="seg-ctl" role="group" aria-label="Affichage"><button data-act="pview" data-k="liste" class="${ui.pview==='liste'?'on':''}">Liste</button><button data-act="pview" data-k="kanban" class="${ui.pview==='kanban'?'on':''}">Colonnes</button></div><a class="btn sec" href="#import">Importer</a><button class="btn" data-act="newp">Nouveau prospect</button>`) + `
+  <div class="row between"><div class="views" role="group" aria-label="Vues enregistrées">${SV.map(([k,l])=>`<button data-act="sv" data-k="${k}" class="${ui.sv===k?'on':''}">${l}</button>`).join('')}</div>
+  <div class="row">${S.aiCols.map(k=>`<span class="aic">${ic('spark')}${AICOLS[k].l}<button data-act="delai" data-k="${k}" aria-label="Retirer la colonne">×</button></span>`).join('')}
+  <select id="addai" data-act="addai" aria-label="Ajouter une colonne IA"><option value="">+ Colonne remplie par l'IA…</option>${Object.entries(AICOLS).filter(([k])=>!S.aiCols.includes(k)).map(([k,v])=>`<option value="${k}">${v.l}</option>`).join('')}</select></div></div>
+  <div class="card"><div class="row">
+    <input type="text" id="f-q" placeholder="Nom, ville, NAF, contact…" value="${esc(f.q)}" data-filt="q" style="flex:1;min-width:180px">
+    <select id="f-tier" data-filt="tier"><option value="">Tous paliers</option>${opt([['A','Palier A'],['B','Palier B'],['C','Palier C']],f.tier)}</select>
+    <select id="f-seg" data-filt="seg"><option value="">Tous segments</option>${opt(Object.entries(SEGMENTS).map(([k,v])=>[k,v.l]),f.seg)}</select>
+    <select id="f-dep" data-filt="dep"><option value="">Tous départements</option>${opt(deps.map(d=>[d,d]),f.dep)}</select>
+    <select id="f-statut" data-filt="statut"><option value="">Tous statuts</option>${opt(STATUTS.map(s=>[s,s]),f.statut)}</select>
+    <label class="row small"><input type="checkbox" id="f-sig" data-filt="sig" ${f.sig?'checked':''}> Avec signal</label>
+  </div></div>
+  ${ui.sel.size?`<div class="confirm row between"><span><b>${ui.sel.size}</b> sélectionné${ui.sel.size>1?'s':''}</span><div class="row">
+    <select id="bulk-seq">${S.sequences.map(s=>`<option value="${s.id}">${esc(s.nom)}</option>`).join('')}</select>
+    <button class="btn sm" data-act="bulkseq">Inscrire en séquence</button><button class="btn sm sec" data-act="bulkcrm">Envoyer au CRM</button><button class="btn sm ghost" data-act="bulkclear">Désélectionner</button></div></div>`:''}
+  ${ui.pview==='kanban'?kanban(rows):`<div class="tw"><table><thead><tr><th><input type="checkbox" id="selall" aria-label="Tout sélectionner" data-act="selall"></th><th>Prospect</th><th class="hide-m">Segment</th><th>Score</th><th>Signal principal</th><th class="hide-m">Contact</th><th>Statut</th><th class="hide-m">Responsable</th>${S.aiCols.map(k=>`<th class="ai hide-m" title="Colonne remplie par l'IA">${ic('spark')} ${AICOLS[k].l}</th>`).join('')}</tr></thead><tbody>
+  ${rows.map(({p,s})=>{const g=topSig(p),c=mainContact(p);return `<tr class="click" data-act="open" data-id="${p.id}">
+    <td data-stop="1"><input type="checkbox" data-act="sel" data-id="${p.id}" ${ui.sel.has(p.id)?'checked':''} aria-label="Sélectionner ${esc(p.nom)}"></td>
+    <td><b>${esc(p.nom)}</b><div class="small muted">${esc(p.ville)} (${p.dep}) · ${p.eff} sal.${p.sites>1?' · '+p.sites+' sites':''}</div></td>
+    <td class="hide-m small">${SEGMENTS[p.seg].l}</td>
+    <td><div class="score">${tierChip(s)}<b>${s.t}</b></div></td>
+    <td class="small">${g?`<b>${SIGNAUX[g.t].l}</b><div class="muted">il y a ${g.d} j · ${esc(g.src)}</div>`:'<span class="muted">—</span>'}</td>
+    <td class="hide-m small">${c?`${esc(c.n)}<div class="muted">${esc(c.f)}</div>`:'<span class="chip warn">à trouver</span>'}</td>
+    <td>${statutChip(p.statut)}</td><td class="hide-m small">${esc(p.owner||'—')}</td>${S.aiCols.map(k=>`<td class="hide-m small" title="Source : ${AICOLS[k].src}">${esc(AICOLS[k].f(p))}</td>`).join('')}</tr>`}).join('') || `<tr><td colspan="${8+S.aiCols.length}" class="muted">Aucun prospect ne correspond à ces filtres.</td></tr>`}
+  </tbody></table></div>`}`;
+}
+const KCOLS=['Nouveau','À qualifier','À contacter','En séquence','A répondu','RDV fixé','Transmis au CRM'];
+function kanban(rows){
+  return `<div class="kb">${KCOLS.map(st=>{const it=rows.filter(r=>r.p.statut===st);return `<div class="kcol" data-statut="${st}"><h3><span>${st}</span><span>${it.length}</span></h3>
+    ${it.map(({p,s})=>{const g=topSig(p);return `<div class="kc" draggable="true" data-kid="${p.id}" data-act="open" data-id="${p.id}"><div class="row between" style="flex-wrap:nowrap"><b class="small">${esc(p.nom)}</b>${tierChip(s)}</div>
+      <span class="small muted">${esc(p.ville)} · ${p.eff} sal. · score ${s.t}</span>${g?`<span class="small">${SIGNAUX[g.t].l}</span>`:''}</div>`}).join('')||'<span class="small muted" style="padding:4px">Déposez une carte ici</span>'}</div>`}).join('')}</div>
+  <p class="small muted">Glissez une carte d'une colonne à l'autre pour changer son statut. Les colonnes Client, Pas maintenant, Écarté et Opposé restent dans la vue Liste.</p>`;
+}
+
+/* ---- Fiche ---- */
+function fiche(){
+  const p=byId(ui.pid); if(!p) return prospects();
+  const s=score(p), b=besoin(p);
+  const cs=p.contacts.filter(c=>c.es!=='bloque'); const c=cs[ui.cidx]||cs[0];
+  if(!ui.gen) ui.gen=gen(p,c,ui.canal,ui.ton,ui.consigne);
+  const opp = p.statut==='Opposé';
+  return head(esc(p.nom), `${esc(p.ville)} (${p.dep}) · SIREN ${p.siren||'à rapprocher'} · NAF ${p.naf} · responsable : ${esc(p.owner||'non assigné')}`,
+   (()=>{const ids=filtered().map(x=>x.p.id), i=ids.indexOf(p.id); return `<button class="btn ghost" data-act="back">← Liste</button><div class="seg-ctl"><button data-act="fnav" data-k="-1" ${i>0?'':'disabled'} aria-label="Fiche précédente" title="Précédente (K)">‹</button><button disabled style="opacity:1;cursor:default">${i>=0?i+1:'–'} / ${ids.length}</button><button data-act="fnav" data-k="1" ${i>=0&&i<ids.length-1?'':'disabled'} aria-label="Fiche suivante" title="Suivante (J)">›</button></div>`;})()) + `
+  <div class="card row between sticky">
+    <div class="row">${gauge(s)}<div><div class="row">${tierChip(s)}<b>Palier ${s.tier}</b></div><div class="small muted">${p.signaux.length} signal${p.signaux.length>1?'s':''} · ${p.contacts.length} contact${p.contacts.length>1?'s':''}</div></div>
+      <select id="st-sel" data-act="statut" aria-label="Statut">${STATUTS.map(x=>`<option ${x===p.statut?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="row">
+      <button class="btn sm sec" data-act="enrich" ${opp?'disabled':''}>Enrichir les contacts</button>
+      <select id="fiche-seq" aria-label="Séquence">${S.sequences.map(q=>`<option value="${q.id}">${esc(q.nom)}</option>`).join('')}</select>
+      <button class="btn sm" data-act="inscrire" ${opp||!c?'disabled':''}>Inscrire en séquence</button>
+      <button class="btn sm sec" data-act="tache">Créer une tâche</button>
+      <button class="btn sm sec" data-act="tocrm">Transmettre au CRM</button>
+    </div>
+  </div>
+  ${opp?`<div class="confirm"><b>Opposition enregistrée.</b> Ce prospect est exclu de tout envoi, sur tous les canaux.</div>`:''}
+  <div class="grid g2">
+    <div class="grid" style="gap:16px">
+      <div class="card"><h2>Pourquoi ce score</h2><p style="margin:0 0 10px">${esc(explain(p))}</p>
+        ${[['Adéquation',s.f,W().fit,'info'],['Intention',s.i,W().int,'warn'],['Accessibilité',s.a,W().acc,'ok']].map(([l,v,w,cl])=>`<div class="row" style="flex-wrap:nowrap"><span style="width:110px" class="small">${l} <span class="muted">×${w}</span></span><div class="bar ${cl}"><i style="width:${v}%"></i></div><b style="width:30px;text-align:right">${v}</b></div>`).join('')}
+      </div>
+      <div class="card"><div class="row between"><h2>Rédaction assistée</h2><span class="small muted">L'IA s'appuie sur le profil, le catalogue et les signaux sourcés</span></div>
+        <div class="tabs" role="tablist">${[['email','E-mail'],['linkedin','LinkedIn'],['appel','Script d\'appel'],['relance','Relance']].map(([k,l])=>`<button data-act="canal" data-k="${k}" class="${ui.canal===k?'on':''}">${l}</button>`).join('')}</div>
+        <div class="row" style="margin-bottom:8px">
+          <label class="f">Destinataire<select id="g-c" data-act="gc">${cs.map((x,i)=>`<option value="${i}" ${x===c?'selected':''}>${esc(x.n)} · ${esc(x.f)}</option>`).join('')||'<option>Aucun contact</option>'}</select></label>
+          <label class="f">Ton<select id="g-ton" data-act="gton">${[['direct','Direct'],['institutionnel','Institutionnel (public)'],['chaleureux','Chaleureux (client)']].map(([k,l])=>`<option value="${k}" ${ui.ton===k?'selected':''}>${l}</option>`).join('')}</select></label>
+          <label class="f" style="flex:1;min-width:160px">Consigne (ex. « plus court », « parle de l'UMFI »)<input type="text" id="g-cons" value="${esc(ui.consigne)}"></label>
+          <button class="btn sm sec" data-act="regen" style="align-self:flex-end">Régénérer</button>
+        </div>
+        <div class="small b" style="margin-bottom:4px">${esc(ui.gen.titre)}</div>
+        <textarea id="g-out" rows="14" class="out">${esc(ui.gen.texte)}</textarea>
+        <div class="row between" style="margin-top:8px"><b class="small">Contrôle avant envoi</b><span id="qc-score"></span></div><div class="qc" id="qc"></div>
+        <div class="row" style="margin-top:8px"><button class="btn sm sec" data-act="copy">Copier</button>${ui.canal==='email'||ui.canal==='relance'?`<button class="btn sm sec" data-act="slots">${ic('calendar')} Insérer 3 créneaux</button>`:''}
+          ${ui.canal==='email'||ui.canal==='relance'?`<button class="btn sm" data-act="valider" ${opp||!c||!c.email?'disabled':''}>Valider et programmer l'envoi</button>`:`<button class="btn sm" data-act="tachecanal">Créer la tâche ${ui.canal==='appel'?'d\'appel':'LinkedIn'}</button>`}
+          ${c&&!c.email?'<span class="small muted">Pas d\'e-mail : lancez l\'enrichissement.</span>':''}</div>
+      </div>
+      <div class="card"><h2>Brief du compte</h2><div class="out" style="min-height:0">${esc(brief(p))}</div></div>
+      <div class="card"><h2>Historique</h2><div class="list">${(p.hist.length?p.hist:[{d:fmt(ago(30)),txt:'Prospect créé depuis : '+p.src}]).slice().reverse().map(h=>`<div class="li"><span class="dot"></span><div class="grow small"><b>${esc(h.d)}</b> · ${esc(h.txt)}</div></div>`).join('')}</div></div>
+    </div>
+    <div class="grid" style="gap:16px;align-content:start">
+      <div class="card"><h2>Besoin estimé</h2>
+        <dl class="kv"><dt>SST recommandés</dt><dd><b>${b.sst}</b> (${W().tauxSST} % de l'effectif) · ${b.sSess} session${b.sSess>1?'s':''}</dd>
+        <dt>Manutention</dt><dd>${b.gpN} salariés exposés · ${b.gSess} session${b.gSess>1?'s':''}</dd>
+        <dt>Évacuation</dt><dd>${b.exo} exercice${b.exo>1?'s':''} par an (2 par site, R4227-39)${p.icpe?' · ICPE':''}</dd>
+        <dt>Potentiel 1re année</dt><dd><b>${eur(b.an1)}</b></dd><dt>Récurrent annuel</dt><dd>${eur(b.rec)}</dd>
+        <dt>Financement</dt><dd>${esc(p.opco||'?')}${b.opcoAide?' · <span class="chip ok">finançable &lt; 50 sal.</span>':''}</dd></dl>
+        ${p.decouverte?`<p class="small" style="margin:8px 0 0"><b>Découverte (appel) :</b> ${p.decouverte.sst!==''?`${p.decouverte.sst} SST déjà formés, écart <b>${Math.max(0,b.sst-(+p.decouverte.sst))}</b>`:'SST actuels inconnus'} · dernier exercice : ${esc(p.decouverte.exo)}${p.decouverte.presta?` · prestataire : ${esc(p.decouverte.presta)}`:''}</p>`:''}
+        <p class="small muted" style="margin:8px 0 0">Hypothèses : recommandation INRS 10 à 15 %, R4224-15, R4227-39, R4541-8. Tarifs d'exemple, à remplacer par le catalogue.</p>
+      </div>
+
+      <div class="card"><h2>Signaux</h2><div class="list">${p.signaux.map(g=>`<div class="li"><span class="dot info"></span><div class="grow small"><b>${SIGNAUX[g.t].l}</b> · poids ${SIGNAUX[g.t].w}, demi-vie ${SIGNAUX[g.t].hl} j<br>${esc(g.txt)}<br><span class="muted">${esc(g.src)} · ${fmt(ago(g.d))}</span></div></div>`).join('')||'<p class="small muted">Aucun signal. Le score repose sur l\'adéquation.</p>'}</div></div>
+      <div class="card"><h2>Contacts</h2><div class="list">${p.contacts.map(x=>`<div class="li"><div class="grow small"><b>${esc(x.n)}</b> · ${esc(x.f)} <span class="chip">${x.role}</span> ${relation(p,x)}<br>${x.email?esc(x.email):'<span class="muted">e-mail inconnu</span>'} ${esChip(x.es)}${x.tel?'<br>'+esc(x.tel):''}</div></div>`).join('')||'<p class="small muted">Aucun contact. Lancez l\'enrichissement ou ajoutez-en un.</p>'}</div>
+        <div class="row" style="margin-top:6px"><input type="text" id="nc-n" placeholder="Nom" style="flex:1;min-width:110px"><input type="text" id="nc-f" placeholder="Fonction" style="flex:1;min-width:110px"><button class="btn sm sec" data-act="addc">Ajouter</button></div></div>
+      <div class="card"><h2>Identité et provenance</h2><dl class="kv">
+        <dt>Effectif</dt><dd>${p.eff} (tranche INSEE)</dd><dt>Établissements</dt><dd>${p.sites}</dd><dt>ICPE / ERP</dt><dd>${p.icpe?'ICPE':'—'} / ${p.erp?'ERP':'—'}</dd>
+        <dt>Source</dt><dd>${esc(p.src)}</dd><dt>SIRENE</dt><dd>rafraîchi le ${fmt(ago(1))}</dd><dt>Base légale</dt><dd>Intérêt légitime B2B</dd><dt>Information RGPD</dt><dd>${p.hist.some(h=>/e-mail/i.test(h.txt))?'au 1er e-mail':'au premier contact'}</dd></dl>
+        <div class="row" style="margin-top:8px"><button class="btn sm ghost" data-act="ecarter">Écarter</button><button class="btn sm ghost" data-act="opposer">Marquer opposé</button></div></div>
+    </div>
+  </div>`;
+}
+
+function gauge(s,size=58){ const r=23, c=2*Math.PI*r, col=s.tier==='A'?'var(--ok)':s.tier==='B'?'var(--warn)':'var(--muted)';
+  return `<svg class="gauge" width="${size}" height="${size}" viewBox="0 0 58 58" role="img" aria-label="Score ${s.t} sur 100"><circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="29" cy="29" r="${r}" fill="none" stroke="${col}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c*s.t/100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 29 29)"/><text x="29" y="34" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="16" font-weight="600" fill="var(--fg)">${s.t}</text></svg>`; }
+
+/* ---- Qualité du message ---- */
+const MOTS_SIG={site:/établissement|ouvr|bâtiment/i,qse:/HSE|QSE|prévention/i,recrut:/recrut|postes|nouveaux salariés/i,dirigeant:/fonction/i,marche:/marché/i,ao:/consultation/i,mac:/MAC|recyclage/i,presse:/annonce|évolution/i,web:/guide/i,ouvert:/./};
+function qualite(txt,canal,p){
+  if(canal==='appel') return null;
+  const c=[]; const corps=txt.split('\n—\n')[0];
+  if(canal==='linkedin'){
+    c.push([txt.length<=300,`${txt.length} / 300 caractères`]);
+    c.push([!/https?:\/\//.test(txt),'Pas de lien dans une invitation']);
+    c.push([/Bonjour \S/.test(txt),'Salutation personnalisée']);
+    c.push([!/gratuit|promo|urgent/i.test(txt),'Pas de ton promotionnel']);
+  } else {
+    const mots=corps.split(/\s+/).filter(Boolean).length, q=(corps.match(/\?/g)||[]).length, g=topSig(p);
+    c.push([mots>=60&&mots<=170,`${mots} mots (idéal : 60 à 170)`]);
+    c.push([corps.includes(p.nom)||p.contacts.some(x=>corps.includes(x.n)),"Personnalisé (entreprise ou contact cité)"]);
+    c.push([!g||MOTS_SIG[g.t].test(corps),g?`Accroche sur le signal « ${SIGNAUX[g.t].l.toLowerCase()} »`:'Accroche sur le secteur']);
+    c.push([q===1,q===1?'Une seule question, claire':`${q} questions (en garder une)`]);
+    c.push([!/gratuit|urgent|promo|exceptionnel|garanti|!!/i.test(corps),'Pas de mots qui déclenchent les filtres anti-spam']);
+    c.push([/opposition/i.test(txt),"Lien d'opposition présent"]);
+    { const m=txt.match(/\[(?!lien)[^\]]+\]/g)||[]; c.push([!m.length, m.length?`À compléter : ${[...new Set(m)].slice(0,3).join(', ')}`:'Aucun champ à compléter']); }
+  }
+  const ok=c.filter(x=>x[0]).length; return {pct:Math.round(ok/c.length*100),c};
+}
+function majQualite(){
+  const t=$('#g-out'), box=$('#qc'), sc=$('#qc-score'); if(!t||!box) return;
+  const q=qualite(t.value,ui.canal,byId(ui.pid));
+  if(!q){ box.innerHTML='<span class="muted">Le script d\'appel n\'est pas contrôlé : il sert de guide.</span>'; sc.innerHTML=''; return; }
+  sc.innerHTML=`<span class="chip ${q.pct>=85?'ok':q.pct>=60?'warn':'bad'}">${q.pct} / 100</span>`;
+  box.innerHTML=q.c.map(([ok,l])=>`<span><b class="${ok?'y':'n'}">${ok?'✓':'!'}</b>${esc(l)}</span>`).join('');
+}
+
+/* ---- Colonnes IA (inspiré d'Attio) ---- */
+const AICOLS={
+ angle:{l:"Angle d'approche",src:'signaux, segment, besoin estimé',f:p=>{const g=topSig(p); return g?.t==='site'||g?.t==='presse'?'Former avant ouverture':g?.t==='qse'?'Épauler le futur QSE':g?.t==='recrut'?'Accueil des nouveaux':g?.t==='marche'||g?.t==='ao'?'Sourçage avant marché':g?.t==='mac'?'Recyclage à date':p.seg==='sante'?'Évacuation des soins':'Obligations chiffrées';}},
+ decideur:{l:'Décideur à viser',src:'segment, effectif',f:p=>p.seg==='sante'?'DRH ou direction des soins':p.seg==='collectivite'?'Responsable formation':p.eff>=250?'Responsable QSE':'Dirigeant ou DRH'},
+ risque:{l:'Risque incendie',src:'Géorisques, SIRENE',f:p=>p.icpe?'Élevé (site ICPE)':p.erp?'Moyen (ERP)':'Standard'},
+ multisite:{l:'Plusieurs sites à former ?',src:'SIRENE (établissements)',f:p=>p.sites>1?`Oui, ${p.sites} sites`:'Non, site unique'},
+ presta:{l:'Prestataire actuel',src:'historique, DECP',f:p=>p.hist.some(h=>/prestataire/i.test(h.txt))?'Oui, noté à l\'appel':p.signaux.some(g=>g.t==='marche')?'Titulaire du marché 2023 (DECP)':'Inconnu'},
+ finance:{l:'Financement',src:'IDCC, effectif',f:p=>p.eff<50?`${p.opco||'OPCO'} (< 50 sal.)`:p.seg==='collectivite'?'Budget formation / CNFPT':'Plan de compétences'}
+};
+/* ---- Force de la relation (inspiré d'Attio) ---- */
+function relation(p,c){ const n=p.hist.length, rep=S.replies.some(r=>r.pid===p.id&&r.de===c.n&&r.cl!=='Opposition'); const lvl = c.es==='bloque'?['bad','opposé'] : rep&&n>=2?['ok','forte'] : rep||n>=2?['info','moyenne'] : n?['warn','faible'] : ['','aucune']; return `<span class="chip ${lvl[0]}" title="Calculée d'après les échanges (e-mails, appels, réponses)">relation ${lvl[1]}</span>`; }
+/* ---- Ma journée ---- */
+const COORDS={'Cergy':[49.036,2.063],'Eaubonne':[48.992,2.278],'Nantes':[47.218,-1.554],'Beauvais':[49.43,2.081],'Sarcelles':[48.997,2.378],'Paris':[48.857,2.352],'Crépy-en-Valois':[49.234,2.888],'Gonesse':[48.987,2.449],'Argenteuil':[48.947,2.248],'Créteil':[48.79,2.455],'Versailles':[48.805,2.12],'Saint-Denis':[48.936,2.357],'Roissy-en-France':[49.004,2.517],'Nanterre':[48.892,2.207],'Chartres':[48.446,1.489],'Lille':[50.629,3.057],'Pontoise':[49.051,2.101],'Rouen':[49.443,1.1],'Meaux':[48.96,2.879],'Rungis':[48.747,2.35],'Taverny':[49.026,2.222],'Poissy':[48.929,2.046]};
+function km(a,b){ const R=6371, t=x=>x*Math.PI/180, dl=t(b[0]-a[0]), dg=t(b[1]-a[1]); const h=Math.sin(dl/2)**2+Math.cos(t(a[0]))*Math.cos(t(b[0]))*Math.sin(dg/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+const SESSION={quand:'Vendredi 20/11, 9 h',quoi:'MAC SST',ou:'Boulangeries Marceau, Versailles',pid:11,geo:COORDS['Versailles']};
+const court=p=>{const s=score(p),g=topSig(p),c=mainContact(p);return `Palier ${s.tier} (${s.t})${g?` · ${SIGNAUX[g.t].l.toLowerCase()} il y a ${g.d} j`:''}${c?` · ${c.f.toLowerCase()}`:' · aucun contact'}`;};
+function nbaList(){
+  const it=[];
+  S.replies.filter(r=>!r.done).forEach(r=>{const p=byId(r.pid); it.push({k:'r'+r.id,ic:'inbox',hot:r.cl==='Intéressé',prio:r.cl==='Intéressé'?100:70,titre:`Traiter la réponse de ${r.de}`,sous:p.nom,why:`Classée « ${r.cl} » (${r.conf} %) : ${r.info}.`,act:['Traiter','gorep',r.id]});});
+  S.tasks.filter(t=>!t.fait&&t.ech<=0&&byId(t.pid)).forEach(t=>{const p=byId(t.pid); it.push({k:'t'+t.id,ic:t.t==='appel'?'phone':t.t==='linkedin'?'users':t.t==='email'?'mail':'check',hot:t.ech<0,prio:t.ech<0?90:80,titre:t.titre,sous:p.nom,why:t.ech<0?`En retard de ${-t.ech} j · ${court(p)}`:`Aujourd'hui · ${court(p)}`,act:['Ouvrir avec le texte','open',p.id,t.t==='appel'?'appel':t.t==='linkedin'?'linkedin':'email'],tid:t.id});});
+  S.historique.filter(h=>echeance(h).etat!=='ok'&&!h.relance).forEach(h=>it.push({k:'h'+h.id,ic:'clock',hot:echeance(h).etat==='retard',prio:75,titre:`Relancer ${h.nom} : ${h.prest}`,sous:`${h.n} stagiaire${h.n>1?'s':''}`,why:`Échéance ${fmt(echeance(h).d)} (${echeance(h).j<0?'dépassée':'dans '+echeance(h).j+' j'}).`,act:['Créer la relance','relance',h.id]}));
+  S.prospects.filter(p=>['Nouveau','À qualifier','À contacter'].includes(p.statut)&&p.signaux.length&&score(p).tier==='A').forEach(p=>it.push({k:'p'+p.id,ic:'spark',hot:false,prio:60+score(p).t/10,titre:`Premier contact : ${p.nom}`,sous:p.ville,why:court(p),act:['Rédiger','open',p.id,'email']}));
+  return it.filter(x=>!S.nbaDone.includes(x.k)).sort((a,b)=>b.prio-a.prio);
+}
+function journee(){
+  const list=nbaList(), goal=8, pct=Math.min(100,Math.round(S.doneToday/goal*100));
+  const near=S.prospects.filter(p=>COORDS[p.ville]&&!['Opposé','Écarté','Client'].includes(p.statut)).map(p=>({p,d:km(SESSION.geo,COORDS[p.ville])})).filter(x=>x.d<=25).sort((a,b)=>score(b.p).t-score(a.p).t).slice(0,4);
+  return `<div class="hello"><div><div class="sub">Mercredi 18 novembre 2026</div><h1>Bonjour Julie, ${list.length} action${list.length>1?'s':''} vous attendent</h1></div><span class="demo">Maquette · données fictives</span></div>
+  <div class="grid g2">
+    <div class="card"><div class="row between"><h2>Prochaines actions</h2><span class="small muted">triées par l'agent : réponses chaudes, retards, échéances, prospects A</span></div>
+      <div>${list.slice(0,8).map(x=>`<div class="nba"><span class="ico ${x.hot?'hot':''}">${ic(x.ic)}</span><div style="min-width:0"><b>${esc(x.titre)}</b> <span class="small muted">· ${esc(x.sous)}</span><div class="why">${esc(x.why)}</div></div>
+        <div class="acts"><button class="btn sm" data-act="${x.act[1]}" data-id="${x.act[2]}" ${x.act[3]?`data-canal="${x.act[3]}"`:''}>${x.act[0]}</button>${x.tid?`<button class="btn sm ghost" data-act="nbadone" data-k="${x.k}" data-id="${x.tid}">Fait</button>`:''}<button class="btn sm ghost" data-act="nbasnooze" data-k="${x.k}" title="Reporter à demain">Demain</button></div></div>`).join('')||'<p class="muted">Tout est à jour. Profitez-en pour préparer une campagne.</p>'}</div>
+      ${list.length>8?`<p class="small muted">${list.length-8} autres actions dans <a href="#taches">Tâches</a>.</p>`:''}</div>
+    <div class="grid" style="gap:16px;align-content:start">
+      <div class="card"><div class="row between"><h2>Objectif du jour</h2><b>${S.doneToday} / ${goal}</b></div><div class="prog" style="margin-top:8px"><i style="width:${pct}%"></i></div>
+        <p class="small muted" style="margin:8px 0 0">Cette semaine : 2 RDV fixés sur 3 visés · 5 réponses · 41 e-mails partis.</p></div>
+      <div class="card"><h2>Cette nuit, l'agent a…</h2><div class="list night">${S.journal.map(j=>`<div class="li"><span class="muted">${ic(j.ic)}</span><div class="grow small"><b>${j.h}</b> · ${esc(j.txt)}</div></div>`).join('')}</div><a class="small" href="#pilote">Régler ce qu'il fait seul</a></div>
+      <div class="card"><div class="row" style="gap:6px">${ic('pin')}<h2>Autour de votre prochaine session</h2></div><p class="small" style="margin:4px 0 8px">${SESSION.quand} · ${SESSION.quoi} · ${esc(SESSION.ou)}. Session lue dans Planif ST. Prospects à moins de 25 km : proposez un passage le même jour.</p>
+        <div class="list">${near.map(({p,d})=>`<div class="li"><div class="grow small"><a href="#" data-act="open" data-id="${p.id}"><b>${esc(p.nom)}</b></a><br><span class="muted">${esc(p.ville)} · ${Math.round(d)} km · ${esc(p.statut)}</span></div>${tierChip(score(p))}</div>`).join('')}</div></div>
+    </div>
+  </div>`;
+}
+
+/* ---- Pilote automatique ---- */
+const NIVEAUX=[
+ ['recherche','Trouver et créer des prospects','Lit BODACC, SIRENE, offres d\'emploi, veille AO ; crée les fiches et les signaux'],
+ ['enrich','Enrichir les contacts','Recherche d\'e-mails vérifiés, dans la limite du budget'],
+ ['redac','Rédiger les premiers messages','Brouillons personnalisés sur le signal et le besoin estimé'],
+ ['reactiv','Envoyer les relances aux clients','Recyclages MAC SST, exercices semestriels (clients connus)'],
+ ['prospect','Envoyer les séquences de prospection','Nouveaux contacts ; l\'automatique exige un modèle validé'],
+ ['linkedin','Agir sur LinkedIn','Toujours manuel : l\'agent prépare le texte, vous l\'envoyez',true],
+ ['tri','Trier les réponses','Classement, arrêt des séquences, oppositions, absences'],
+ ['rdv','Proposer des rendez-vous','Créneaux libres de l\'agenda Microsoft 365 envoyés aux prospects intéressés'],
+ ['crm','Mettre à jour le CRM','Comptes, contacts, activités et opportunités au RDV fixé']
+];
+function pilote(){
+  const L=[['manuel','Je le fais'],['proposer',"L'agent propose"],['auto','Automatique']];
+  return head('Pilote automatique',"Choisissez ce que l'agent fait seul. Les garde-fous (opposition, plafonds, plages horaires, budget) s'appliquent toujours.") + `
+  <div class="tw"><table class="lvl"><thead><tr><th>Activité</th><th>Niveau</th></tr></thead><tbody>${NIVEAUX.map(([k,l,d,lock])=>`<tr><td><b>${l}</b><div class="small muted">${d}</div></td><td><div class="seg-ctl" role="group" aria-label="${esc(l)}">${L.map(([v,t])=>`<button data-act="lvl" data-k="${k}" data-v="${v}" class="${S.niveaux[k]===v?'on':''}" ${lock&&v!=='manuel'?'disabled':''}>${t}</button>`).join('')}</div></td></tr>`).join('')}</tbody></table></div>
+  <div class="grid g2e">
+    <div class="card"><h2>Limites</h2><div class="grid" style="gap:12px">
+      <label class="f" for="lim-b"><span class="row between"><span>Budget IA et enrichissement par mois</span><b>${S.limites.budget} €</b></span><input type="range" id="lim-b" min="10" max="150" step="5" value="${S.limites.budget}" data-lim="budget"></label>
+      <label class="f" for="lim-m"><span class="row between"><span>Envois automatiques par jour, toutes boîtes</span><b>${S.limites.maxAuto}</b></span><input type="range" id="lim-m" min="0" max="80" step="5" value="${S.limites.maxAuto}" data-lim="maxAuto"></label>
+      <p class="small muted" style="margin:0">Consommé ce mois : 18,40 € d'IA et 6,20 € d'enrichissement. Au-delà du budget, l'agent repasse en « propose ».</p></div></div>
+    <div class="card"><h2>Journal de l'agent</h2><div class="list">${S.journal.map(j=>`<div class="li"><span class="muted">${ic(j.ic)}</span><div class="grow small"><b>${j.h}</b> · ${esc(j.txt)}</div></div>`).join('')}</div><p class="small muted">Chaque action garde sa raison et ses sources. Les envois et mises à jour du CRM sont réversibles pendant 10 minutes.</p></div>
+  </div>`;
+}
+
+/* ---- Campagnes ---- */
+const POSTS=[
+ "Combien de sauveteurs secouristes du travail faut-il dans votre entreprise ? L'INRS recommande 10 à 15 % de l'effectif, et un recyclage tous les 24 mois. Nous avons préparé un tableau simple par taille d'entreprise : je vous le partage en commentaire.",
+ "Exercice d'évacuation : le Code du travail en demande un au moins tous les 6 mois. Ce que nous voyons le plus souvent sur le terrain : des serre-files non désignés et des points de rassemblement trop proches du bâtiment. Trois vérifications à faire avant le prochain exercice ⬇️",
+ "Retour d'expérience : former 30 caristes en deux semaines sans arrêter les quais. Sessions de 7 h en horaires décalés, gestes et postures sur leurs propres postes, et notre unité mobile incendie sur le parking."
+];
+function campagnes(){
+  const chip=e=>({'Prête':'ok','Brouillon':'warn','À préparer':'','Envoyée':'info'}[e]);
+  return head('Campagnes','Calendrier marketing de l\'année : temps forts réglementaires et saisonniers, préparés par l\'agent, validés par vous.') + `
+  <div class="months">${S.campagnes.map(c=>`<div class="card camp"><span class="m">${c.mois}</span><b>${esc(c.titre)}</b><span class="small muted">${esc(c.seg)} · ${esc(c.canaux)}</span>
+    <div class="row between"><span class="chip ${chip(c.etat)}">${c.etat}</span><span class="small muted">${c.cible?c.cible+' destinataires':'contenu'}</span></div>
+    <div class="row">${c.etat==='À préparer'?`<button class="btn sm" data-act="prepcamp" data-id="${c.id}">Préparer avec l'IA</button>`:c.etat==='Brouillon'?`<button class="btn sm" data-act="valcamp" data-id="${c.id}">Relire et valider</button>`:c.etat==='Prête'?`<button class="btn sm sec" data-act="sendcamp" data-id="${c.id}">Programmer</button>`:'<span class="small muted">Programmée</span>'}</div></div>`).join('')}</div>
+  <div class="card"><div class="row between"><h2>Posts LinkedIn de la semaine</h2><span class="small muted">Proposés par l'agent. À publier vous-même depuis votre compte.</span></div>
+    <div class="grid g3">${POSTS.map((t,i)=>`<div class="out" style="min-height:0;display:flex;flex-direction:column;gap:8px"><span>${esc(t)}</span><button class="btn sm sec" data-act="copypost" data-i="${i}" style="align-self:flex-start">Copier</button></div>`).join('')}</div></div>`;
+}
+
+/* ---- Palette de commandes ---- */
+const normq=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+function palItems(){
+  const q=normq(ui.pal.q||'');
+  const acts=[
+    {l:'Importer un fichier',ic:'upload',k:'Action',run:()=>go('import')},
+    {l:'Nouveau prospect',ic:'users',k:'Action',run:()=>{ go('prospects'); setTimeout(()=>document.querySelector('[data-act=newp]')?.click(),60); }},
+    {l:"Lancer la session d'appels",ic:'phone',k:'Action',run:()=>{ ui.session=true; go('taches'); }},
+    {l:'Changer de thème',ic:'moon',k:'Action',run:toggleTheme}
+  ];
+  const views=VIEWS.filter(v=>v[0]!=='grp').map(v=>({l:v[1],ic:v[3],k:'Écran',run:()=>go(v[0])}));
+  const ps=S.prospects.map(p=>({l:p.nom,sub:`${p.ville} · ${score(p).tier} ${score(p).t}`,ic:'users',k:'Prospect',run:()=>{ui.canal='email';go('fiche',p.id);}}));
+  const all=[...acts,...views,...ps];
+  return (q? all.filter(x=>normq(x.l+' '+(x.sub||'')).includes(q)) : [...views.slice(0,6),...acts]).slice(0,9);
+}
+function renderPal(){
+  if(!ui.pal){ $('#pal').innerHTML=''; return; }
+  const it=palItems(); ui.pal.i=Math.min(ui.pal.i,Math.max(0,it.length-1));
+  const list=it.map((x,i)=>`<li class="${i===ui.pal.i?'on':''}" data-pi="${i}">${ic(x.ic)}<span>${esc(x.l)}${x.sub?` <span class="small muted">· ${esc(x.sub)}</span>`:''}</span><span class="k">${x.k}</span></li>`).join('')||'<li>Aucun résultat</li>';
+  if(!$('#pal-in')){ $('#pal').innerHTML=`<div class="pal-back" data-pal="back"><div class="pal" role="dialog" aria-label="Recherche"><input id="pal-in" placeholder="Rechercher un prospect, un écran, une action…" autocomplete="off"><ul id="pal-ul">${list}</ul><div class="ft"><span><kbd>↑</kbd> <kbd>↓</kbd> naviguer</span><span><kbd>Entrée</kbd> ouvrir</span><span><kbd>Échap</kbd> fermer</span></div></div></div>`; $('#pal-in').value=ui.pal.q; $('#pal-in').focus(); }
+  else $('#pal-ul').innerHTML=list;
+}
+function openPal(){ ui.pal={q:'',i:0}; renderPal(); }
+function closePal(){ ui.pal=null; renderPal(); }
+function runPal(i){ const x=palItems()[i]; closePal(); if(x) x.run(); }
+function toggleTheme(){ const root=document.documentElement; const dark = root.dataset.theme ? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; root.dataset.theme = dark?'light':'dark'; try{localStorage.setItem('pm-theme',root.dataset.theme)}catch(e){} }
+
+/* ---- Tâches ---- */
+function taches(){
+  if(ui.session) return sessionAppels();
+  const f=ui.tfilter, list=S.tasks.filter(t=>(f==='tous'||t.t===f)).sort((a,b)=>a.fait-b.fait||a.ech-b.ech);
+  const calls=S.tasks.filter(t=>t.t==='appel'&&!t.fait&&byId(t.pid)).length;
+  return head('Tâches du jour', 'Préparées par les séquences et les automatisations, avec le texte prêt à l\'emploi', `<button class="btn" data-act="session" ${calls?'':'disabled'}>Lancer la session d'appels (${calls})</button>`) + `
+  <div class="tabs">${[['tous','Toutes'],['appel','Appels'],['linkedin','LinkedIn'],['email','E-mails à valider'],['qualifier','Qualification']].map(([k,l])=>`<button data-act="tf" data-k="${k}" class="${f===k?'on':''}">${l}</button>`).join('')}</div>
+  <div class="card"><div class="list">${list.map(t=>{const p=byId(t.pid);return `<div class="li" style="${t.fait?'opacity:.55':''}">
+    <input type="checkbox" data-act="tdone" data-id="${t.id}" ${t.fait?'checked':''} aria-label="Marquer comme faite" style="margin-top:4px">
+    <div class="grow"><div class="row"><span class="ty ${t.t==='qualifier'?'tache':t.t}">${t.t}</span><b style="${t.fait?'text-decoration:line-through':''}">${esc(t.titre)}</b></div>
+      <div class="small muted">${p?esc(p.nom):''} · ${t.ech<0?`<span style="color:var(--bad)">en retard de ${-t.ech} j</span>`:t.ech===0?"aujourd'hui":'dans '+t.ech+' j'}</div></div>
+    ${p?`<button class="btn sm ghost" data-act="open" data-id="${p.id}" data-canal="${t.t==='appel'?'appel':t.t==='linkedin'?'linkedin':'email'}">Ouvrir avec le texte</button>`:''}</div>`}).join('')||'<p class="muted">Rien à faire ici.</p>'}</div></div>`;
+}
+function sessionAppels(){
+  const calls=S.tasks.filter(t=>t.t==='appel'&&!t.fait&&byId(t.pid));
+  if(!calls.length){ ui.session=null; return taches(); }
+  const t=calls[0], p=byId(t.pid), c=mainContact(p), g=gen(p,c,'appel','direct','');
+  return head('Session d\'appels', `${calls.length} appel${calls.length>1?'s':''} restant${calls.length>1?'s':''}`, `<button class="btn ghost" data-act="endsession">Terminer la session</button>`) + `
+  <div class="grid g2"><div class="card"><div class="row between"><h2>${esc(p.nom)}</h2>${tierChip(score(p))}</div>
+    <p class="small">${c?`<b>${esc(c.n)}</b> · ${esc(c.f)} · ${esc(c.tel||'téléphone du standard : 01 00 00 00 00')}`:'Pas de contact : demander le responsable sécurité au standard'}</p>
+    <div class="out">${esc(g.texte)}</div></div>
+    <div class="card"><h2>Guide de découverte</h2><div class="pb">
+      <label class="f">SST déjà formés<input type="number" id="pb-sst" min="0" placeholder="ex. 6"></label>
+      <label class="f">Dernier exercice d'évacuation<select id="pb-exo"><option>inconnu</option><option>moins de 6 mois</option><option>6 à 12 mois</option><option>plus d'un an</option><option>jamais</option></select></label>
+      <label class="f">Qui décide ?<input type="text" id="pb-dec" placeholder="nom, fonction"></label>
+      <label class="f">Prestataire actuel<input type="text" id="pb-presta" placeholder="si connu"></label>
+      <label class="f">Financement<select id="pb-fin"><option>non abordé</option><option>OPCO</option><option>budget interne</option><option>marché public</option></select></label>
+      <label class="f">Échéance du projet<select id="pb-ech"><option>non précisée</option><option>ce trimestre</option><option>dans 3 à 6 mois</option><option>l'an prochain</option></select></label></div>
+    <p class="small muted" style="margin:0 0 6px">Les réponses mettent à jour la fiche et recalculent l'écart de SST à former.</p>
+    <textarea id="cr" rows="3" placeholder="Compte rendu libre, tapé ou dicté. L'IA en tire le résultat, la prochaine étape et la date."></textarea>
+    <div class="grid" style="gap:8px;margin-top:10px">
+      <button class="btn" data-act="out" data-k="rdv" data-id="${t.id}">Joint : RDV fixé</button>
+      <button class="btn sec" data-act="out" data-k="rappel" data-id="${t.id}">Joint : rappeler dans 15 jours</button>
+      <button class="btn sec" data-act="out" data-k="messagerie" data-id="${t.id}">Messagerie : nouvel essai demain</button>
+      <button class="btn ghost" data-act="out" data-k="pasinteresse" data-id="${t.id}">Pas intéressé (reprise à 11 mois)</button>
+    </div></div></div>`;
+}
+
+/* ---- Réponses ---- */
+function reponses(){
+  const r=S.replies.find(x=>x.id===ui.rep)||S.replies[0], p=byId(r.pid);
+  const clChip = cl => ({'Intéressé':'ok','Pas maintenant':'warn','Mauvais interlocuteur':'info','Absence':'','Déjà équipé':'warn','Opposition':'bad'}[cl]);
+  const acts = {
+    'Intéressé':[['rdv','Proposer 3 créneaux et passer en « A répondu »'],['tcall','Créer la tâche d\'appel']],
+    'Mauvais interlocuteur':[['nc','Créer le contact et l\'inscrire en séquence']],
+    'Pas maintenant':[['reprise','Planifier la reprise au '+(r.reprise?fmt(new Date(r.reprise)):'')]],
+    'Absence':[['pause','Mettre la séquence en pause jusqu\'au 26/11']],
+    'Déjà équipé':[['reprise11','Reprise à 11 mois + noter le prestataire']],
+    'Opposition':[]
+  }[r.cl]||[];
+  return head('Réponses', 'Relevées toutes les 5 minutes et classées par l\'IA. En dessous de 80 % de confiance, lecture humaine.') + `
+  <div class="grid g2a">
+    <div class="card"><div class="list">${S.replies.map(x=>`<div class="li" style="cursor:pointer;${x.id===r.id?'background:var(--surface-2);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px':''}" data-act="rep" data-id="${x.id}">
+      <span class="dot ${x.done?'':'info'}"></span><div class="grow"><div class="row between"><b>${esc(x.de)}</b><span class="small muted">${x.d===0?"aujourd'hui":'il y a '+x.d+' j'}</span></div>
+      <div class="small">${esc(byId(x.pid).nom)}</div><div class="row" style="margin-top:3px"><span class="chip ${clChip(x.cl)}">${x.cl} · ${x.conf} %</span>${x.done?'<span class="chip">traitée</span>':''}</div></div></div>`).join('')}</div></div>
+    <div class="card"><div class="row between"><h2>${esc(r.obj)}</h2><span class="chip ${clChip(r.cl)}">${r.cl} · confiance ${r.conf} %</span></div>
+      <p class="small muted">De ${esc(r.de)} · <a href="#" data-act="open" data-id="${p.id}">${esc(p.nom)}</a></p>
+      <div class="mail">${esc(r.txt)}</div>
+      <div class="confirm" style="margin-top:12px"><b>Lu par l'IA :</b> ${esc(r.info)}.<br><span class="small">Action déjà faite : séquence arrêtée${r.cl==='Opposition'?', opposition globale enregistrée':''}.</span></div>
+      <div class="row" style="margin-top:12px">${r.done?'<span class="chip ok">Traitée</span>':acts.map(([k,l])=>`<button class="btn sm" data-act="ract" data-k="${k}" data-id="${r.id}">${l}</button>`).join('')+`<button class="btn sm ghost" data-act="ract" data-k="done" data-id="${r.id}">Marquer comme traitée</button>`}
+      ${!r.done?`<select id="reclass" data-act="reclass" data-id="${r.id}" aria-label="Corriger le classement"><option value="">Corriger le classement…</option>${['Intéressé','Pas maintenant','Mauvais interlocuteur','Absence','Déjà équipé','Opposition'].map(x=>`<option>${x}</option>`).join('')}</select>`:''}</div>
+    </div></div>`;
+}
+
+/* ---- Assistant ---- */
+const SUGG=['Trouve les entrepôts de plus de 100 salariés dans le 95 et le 94','Quels clients doivent recycler leurs SST ?','Prospects avec un signal mais sans contact identifié','Prépare mon rendez-vous avec Entrepôts Frigorifiques Seine-Est','Pourquoi Distrinord a ce score ?'];
+function assistant(){
+  if(!S.chat.length) S.chat.push({r:'a',t:"Bonjour. Je peux chercher des prospects, expliquer un score, préparer un rendez-vous ou inscrire une liste en séquence. Je montre toujours ce que je vais modifier avant de le faire."});
+  return head('Assistant', 'Questions en langage courant. Les lectures sont immédiates, les modifications demandent votre confirmation.', `<button class="btn ghost sm" data-act="clearchat">Effacer</button>`) + `
+  <div class="card"><div class="chat" id="chatbox">${S.chat.map(m=>`<div class="msg ${m.r}">${m.h||esc(m.t)}</div>`).join('')}</div>
+  ${ui.pending?`<div class="confirm row between" style="margin-top:8px"><span>${esc(ui.pending.label)}</span><div class="row"><button class="btn sm" data-act="confirm">Confirmer</button><button class="btn sm ghost" data-act="cancel">Annuler</button></div></div>`:''}
+  <form id="chatform" class="row" style="margin-top:10px"><input type="text" id="chatin" placeholder="Ex. : entrepôts ICPE dans le 95 avec un signal" style="flex:1;min-width:200px" autocomplete="off"><button class="btn" type="submit">Envoyer</button></form>
+  <div class="row" style="margin-top:8px">${SUGG.map(s=>`<button class="chip" style="cursor:pointer" data-act="sugg" data-k="${esc(s)}">${esc(s)}</button>`).join('')}</div></div>`;
+}
+function answer(q){
+  const l=q.toLowerCase();
+  const segK=Object.keys(SEGMENTS).find(k=>l.includes(k.slice(0,6))) || (/entrep[oô]t|logisti|transport/.test(l)?'logistique': /clinique|ehpad|sant/.test(l)?'sante': /usine|industri/.test(l)?'industrie': /magasin|enseigne|commerce/.test(l)?'commerce': /mairie|collectiv|commune/.test(l)?'collectivite': /h[oô]tel|restaur/.test(l)?'hotellerie':'');
+  const named=S.prospects.find(p=>l.includes(p.nom.toLowerCase().slice(0,10)));
+  if(/pourquoi/.test(l) && named) return {h:`<b>${esc(named.nom)}</b><br>${esc(explain(named))}<br><span class="small">Score ${score(named).t} = adéquation ${score(named).f} × ${W().fit} + intention ${score(named).i} × ${W().int} + accessibilité ${score(named).a} × ${W().acc}.</span>`};
+  if(/(pr[ée]pare|rendez-vous|rdv)/.test(l) && named){ const b=besoin(named); return {h:`<b>Fiche de préparation · ${esc(named.nom)}</b><div class="out" style="min-height:0;margin-top:6px">${esc(brief(named))}\n\nQuestions à poser :\n· Combien de SST aujourd'hui et date de leur dernière formation ?\n· Dernier exercice d'évacuation ? Guides et serre-files désignés ?\n· Calendrier des arrivées et budget formation 2027\n\nOffre à pousser : ${b.sSess} session(s) SST + ${b.gSess} gestes et postures + ${b.exo} exercice(s) incendie, soit ${eur(b.an1)} (tarifs d'exemple)</div>`}; }
+  if(/recycl|mac/.test(l)){ const r=S.prospects.filter(p=>p.signaux.some(g=>g.t==='mac')); return {h:`${r.length} client${r.length>1?'s':''} à recycler :<br>${r.map(p=>`· <a href="#" data-act="open" data-id="${p.id}">${esc(p.nom)}</a> : ${esc(p.signaux.find(g=>g.t==='mac').txt)}`).join('<br>')}`, ids:r.map(p=>p.id), seq:3}; }
+  let res=S.prospects.filter(p=>!['Opposé','Écarté'].includes(p.statut));
+  const crit=[];
+  const deps=(l.match(/\b(0[1-9]|[1-8]\d|9[0-5]|2a|2b)\b/g)||[]); if(deps.length){res=res.filter(p=>deps.includes(p.dep)); crit.push('départements '+deps.join(', '));}
+  const m=l.match(/(plus de|\+|>|au moins)\s*(\d+)/); if(m){res=res.filter(p=>p.eff>=+m[2]); crit.push('effectif ≥ '+m[2]);}
+  if(segK){res=res.filter(p=>p.seg===segK); crit.push(SEGMENTS[segK].l.toLowerCase());}
+  if(/icpe/.test(l)){res=res.filter(p=>p.icpe); crit.push('ICPE');}
+  if(/sans contact|contact identifi/.test(l)){res=res.filter(p=>!mainContact(p)||mainContact(p).role==='standard'); crit.push('sans décideur identifié');}
+  if(/signal/.test(l)){res=res.filter(p=>p.signaux.length); crit.push('avec signal');}
+  const t=l.match(/\b(?:palier|tier)?\s*\b([abc])\b(?=\s|$)/); if(/palier|prospects a\b|^a\b/.test(l)&&t){res=res.filter(p=>score(p).tier===t[1].toUpperCase()); crit.push('palier '+t[1].toUpperCase());}
+  if(!crit.length) return {t:"Je n'ai pas reconnu de critère. Essayez avec un secteur (logistique, santé, industrie…), un département (95), un effectif (« plus de 100 salariés »), « ICPE », « avec signal » ou « sans contact »."};
+  res.sort((a,b)=>score(b).t-score(a).t);
+  return {h:`<b>${res.length}</b> prospect${res.length>1?'s':''} · ${esc(crit.join(' · '))}${res.length?`<div class="tw" style="margin-top:6px"><table><thead><tr><th>Prospect</th><th>Score</th><th>Signal</th></tr></thead><tbody>${res.map(p=>`<tr class="click" data-act="open" data-id="${p.id}"><td>${esc(p.nom)}<div class="small muted">${esc(p.ville)} · ${p.eff} sal.</div></td><td>${tierChip(score(p))} ${score(p).t}</td><td class="small">${topSig(p)?SIGNAUX[topSig(p).t].l:'—'}</td></tr>`).join('')}</tbody></table></div>`:''}${res.length?'<div class="small" style="margin-top:6px">Je peux les inscrire en séquence « Ouverture de site » : utilisez le bouton de confirmation ci-dessous.</div>':''}`, ids:res.map(p=>p.id), seq:1};
+}
+
+/* ---- Import ---- */
+const FIELDS={'':'— ignorer —',nom:'Raison sociale',siret:'SIRET / SIREN',ville:'Ville',cp:'Code postal',naf:'Code NAF',eff:'Effectif',contact:'Nom du contact',fonction:'Fonction',email:'E-mail',tel:'Téléphone'};
+const SYN={nom:/raison|soci[ée]t[ée]|entreprise|nom.?(de l')?entreprise|company/i,siret:/siret|siren/i,ville:/ville|commune|city/i,cp:/code.?postal|^cp$|zip/i,naf:/naf|ape/i,eff:/effectif|salari|employ/i,contact:/^contact|nom.?contact|interlocuteur/i,fonction:/fonction|poste|titre/i,email:/mail/i,tel:/t[ée]l|phone/i};
+const SAMPLE=`Raison sociale;SIRET;Code postal;Ville;Code APE;Effectif;Contact;Fonction;Email;Téléphone
+ENTREPOTS DU PARISIS;93112233700013;95150;Taverny;5210B;180;Marion Caron;Responsable QSE;m.caron@parisis-entrepots.example;01 39 00 00 11
+Logistique du Vexin SAS;91234567100015;95000;Cergy;5210B;240;Claire Vasseur;DRH;c.vasseur@logistique-vexin.example;
+Clinique Saint-Roch-Val;93223344800012;78300;Poissy;8610Z;260;Paul Mercier;Directeur;p.mercier@gmail.com;
+Hypermarchés Delta Nord;12345;59000;Lille;4711F;410;Anne Vidal;Responsable sécurité;a.vidal@deltanord.example;
+Imprimerie Lumière;93334455800012;76000;Rouen;1812Z;35;Hugo Blanc;Gérant;h.blanc@imprimerie-lumiere.example;02 35 00 00 22
+BTP Exemple Est;93445566800012;77100;Meaux;4399C;90;Marc Dupuis;Conducteur de travaux;m.dupuis@exemple-btp.example;
+Résidence Les Charmilles;93556677800012;95100;Argenteuil;8710A;120;Lucie Perrot;Directrice;l.perrot@charmilles.example;01 34 00 00 33
+Transports Martin & Cie;93667788900011;94150;Rungis;4941A;75;;;;01 45 00 00 44`;
+function luhn(n){ n=n.replace(/\s/g,''); if(!/^\d{9}$|^\d{14}$/.test(n)) return false; let s=0; for(let i=0;i<n.length;i++){ let d=+n[n.length-1-i]; if(i%2){d*=2; if(d>9)d-=9;} s+=d;} return s%10===0 || n.startsWith('356000000'); }
+function parseCSV(txt){
+  txt=txt.replace(/^﻿/,''); const first=txt.split(/\r?\n/)[0]; const sep=(first.match(/;/g)||[]).length>=(first.match(/,/g)||[]).length?';':',';
+  const rows=[]; let row=[], cur='', q=false;
+  for(let i=0;i<txt.length;i++){ const ch=txt[i];
+    if(q){ if(ch==='"'&&txt[i+1]==='"'){cur+='"';i++;} else if(ch==='"') q=false; else cur+=ch; }
+    else if(ch==='"') q=true; else if(ch===sep){row.push(cur);cur='';} else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&txt[i+1]==='\n') i++; row.push(cur); cur=''; if(row.some(c=>c.trim())) rows.push(row); row=[]; } else cur+=ch; }
+  row.push(cur); if(row.some(c=>c.trim())) rows.push(row);
+  return {sep, head:rows[0]||[], data:rows.slice(1)};
+}
+const normName = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\b(sas|sarl|sa|sasu|eurl|et cie|& cie)\b/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+function analyse(){
+  const im=ui.imp; const get=(r,f)=>{const i=im.map.indexOf(f); return i>=0?(r[i]||'').trim():'';};
+  const seen=new Set();
+  im.rows=im.data.map(r=>{
+    const o={nom:get(r,'nom'),siret:get(r,'siret').replace(/\s/g,''),ville:get(r,'ville'),cp:get(r,'cp'),naf:get(r,'naf'),eff:+get(r,'eff')||0,contact:get(r,'contact'),fonction:get(r,'fonction'),email:get(r,'email').toLowerCase(),tel:get(r,'tel')};
+    let st='Nouveau', cls='ok', note='';
+    const dup=S.prospects.find(p=>(o.siret && p.siren && o.siret.slice(0,9)===p.siren.replace(/\s/g,'')) || normName(p.nom)===normName(o.nom));
+    if(!o.nom){st='Rejeté';cls='bad';note='raison sociale vide';}
+    else if(dup){st='Doublon';cls='';note='déjà présent : '+dup.nom+' (fusion proposée)';}
+    else if(seen.has(normName(o.nom))){st='Doublon';cls='';note='doublon dans le fichier';}
+    else if(o.email && S.oppositions.some(x=>x.startsWith('@')?o.email.endsWith(x.slice(1)):x===o.email)){st='Opposé';cls='bad';note='présent sur la liste d\'opposition : contact non importé';}
+    else if(o.siret && !luhn(o.siret)){st='À vérifier';cls='warn';note='SIRET invalide : rapprochement SIRENE par nom + commune';}
+    else if(/@(gmail|hotmail|yahoo|orange|free|wanadoo|outlook|laposte)\./.test(o.email)){st='À vérifier';cls='warn';note='adresse e-mail personnelle : à remplacer par une adresse professionnelle';}
+    else if(!o.contact){st='Nouveau';cls='info';note='sans contact : enrichissement proposé';}
+    seen.add(normName(o.nom));
+    return {...o,st,cls,note};
+  });
+}
+function imp(){
+  const im=ui.imp;
+  let body=`<div class="card"><div class="drop" id="drop"><p style="margin:0 0 8px"><b>Déposez un fichier CSV</b> (séparateur « ; » ou « , ») ou choisissez-le.</p>
+    <div class="row" style="justify-content:center"><input type="file" id="file" accept=".csv,.txt"><button class="btn sec" data-act="sample">Charger le fichier d'exemple</button></div>
+    <p class="small muted" style="margin:8px 0 0">L'XLSX sera accepté dans l'outil réel. Ici, le fichier reste dans votre navigateur.</p></div></div>`;
+  if(im){
+    const counts={}; im.rows.forEach(r=>counts[r.st]=(counts[r.st]||0)+1);
+    const n=im.rows.filter(r=>r.st==='Nouveau'||r.st==='À vérifier').length;
+    body+=`<div class="card"><h2>Correspondance des colonnes</h2><p class="small muted">Détectée automatiquement d'après les intitulés. Modifiable, puis mémorisée pour ce modèle de fichier.</p>
+      <div class="tw"><table><thead><tr><th>Colonne du fichier</th><th>Champ de l'agent</th><th>Exemple</th></tr></thead><tbody>${im.head.map((h,i)=>`<tr><td>${esc(h)}</td><td><select data-act="map" data-i="${i}" id="map-${i}">${Object.entries(FIELDS).map(([k,l])=>`<option value="${k}" ${im.map[i]===k?'selected':''}>${l}</option>`).join('')}</select></td><td class="small muted">${esc(im.data[0]?.[i]||'')}</td></tr>`).join('')}</tbody></table></div></div>
+    <div class="kpis">${['Nouveau','À vérifier','Doublon','Opposé','Rejeté'].map(k=>`<div class="kpi"><span class="l">${k}</span><span class="v">${counts[k]||0}</span></div>`).join('')}</div>
+    <div class="card"><div class="row between"><h2>Aperçu et contrôles</h2><button class="btn" data-act="doimport" ${n?'':'disabled'}>Importer ${n} prospect${n>1?'s':''}</button></div>
+      <div class="tw"><table><thead><tr><th>Ligne</th><th>Raison sociale</th><th>Ville</th><th>Effectif</th><th>Contact</th><th>Résultat</th></tr></thead><tbody>${im.rows.map((r,i)=>`<tr><td>${i+2}</td><td>${esc(r.nom)}</td><td>${esc(r.ville)}</td><td>${r.eff||''}</td><td class="small">${esc(r.contact)}<div class="muted">${esc(r.email)}</div></td><td><span class="chip ${r.cls}">${r.st}</span><div class="small muted">${esc(r.note)}</div></td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted">Après import : rapprochement SIRENE (NAF, effectif, établissements, dirigeants, IDCC), calcul du besoin et du score, puis automatisation « Qualifier les nouveaux prospects A ». Import annulable pendant 30 jours.</p></div>`;
+  }
+  return head('Import de bases', 'Fichiers clients, CCI, salons, achats de fichiers, exports d\'autres outils') + body;
+}
+function loadCSV(txt,name){
+  const p=parseCSV(txt);
+  const map=p.head.map(h=>{ for(const [k,re] of Object.entries(SYN)) if(re.test(h)) return k; return ''; });
+  const used=new Set(); map.forEach((m,i)=>{ if(m&&used.has(m)) map[i]=''; else used.add(m); });
+  ui.imp={name,head:p.head,data:p.data,map}; analyse(); render();
+}
+function nafSeg(naf){ const n=naf.replace('.',''); if(/^(49|52|53)/.test(n))return'logistique'; if(/^(86|87|88)/.test(n))return'sante'; if(/^(10|11|1[2-9]|2\d|3[0-3])/.test(n))return'industrie'; if(/^(47|46)/.test(n))return'commerce'; if(/^84/.test(n))return'collectivite'; if(/^(55|56)/.test(n))return'hotellerie'; if(/^(41|42|43)/.test(n))return'btp'; return 'commerce'; }
+function cpDep(cp){ return (cp||'').slice(0,2) || '—'; }
+
+/* ---- Sources ---- */
+function sources(){
+  const src=[
+    ['Bases fournies (CSV / XLSX)','Import avec dédoublonnage SIRET → SIREN → nom','Actif','ok','MVP'],
+    ['Base clients du CRM','Clients, stagiaires, dates de formation (recyclages)','Actif','ok','MVP'],
+    ['Recherche d\'entreprises (SIRENE)','NAF, effectif, établissements, dirigeants, IDCC','Actif · 312 fiches rafraîchies cette nuit','ok','MVP'],
+    ['Veille AO','Acheteurs actifs, attributions, concurrents','Actif','ok','MVP'],
+    ['BODACC','Créations d\'établissements, changements de dirigeant, procédures','Actif · 21 signaux ce mois','ok','P3'],
+    ['France Travail (offres d\'emploi)','Recrutements QSE / HSE, recrutements en nombre','Clé API à saisir','warn','P3'],
+    ['Géorisques (ICPE)','Sites classés, régime Seveso','Actif','ok','P3'],
+    ['Annuaire de l\'administration','Collectivités et établissements publics','Actif','ok','P3'],
+    ['DECP','Marchés attribués, échéances, titulaires','Actif · 4 renouvellements à 12 mois','ok','P3'],
+    ['Veille web et presse','Ouvertures, extensions, rachats','Actif · 38 articles lus, 6 retenus','ok','P3'],
+    ['Enrichissement de contacts','E-mails vérifiés, conformes RGPD','Option · budget 30 € / mois','warn','P2'],
+    ['LinkedIn','Tâches manuelles et textes préparés, pas de collecte automatique','Manuel','info','P2'],
+  ];
+  return head('Sources et signaux','Chaque signal garde sa source vérifiable. Un signal sans source n\'est jamais cité dans un message.') + `
+  <div class="tw"><table><thead><tr><th>Source</th><th>Apporte</th><th>État</th><th>Phase</th></tr></thead><tbody>${src.map(s=>`<tr><td><b>${s[0]}</b></td><td class="small">${s[1]}</td><td><span class="chip ${s[3]}">${s[2]}</span></td><td>${s[4]}</td></tr>`).join('')}</tbody></table></div>
+  <div class="card"><h2>Barème des signaux</h2><p class="small muted">L'intention d'un signal diminue de moitié à chaque demi-vie. Modifiable dans les paramètres de l'outil réel.</p>
+  <div class="tw"><table><thead><tr><th>Signal</th><th>Poids</th><th>Demi-vie</th><th>Valeur à 30 jours</th></tr></thead><tbody>${Object.values(SIGNAUX).map(s=>`<tr><td>${s.l}</td><td>${s.w}</td><td>${s.hl} j</td><td><div class="score"><div class="bar"><i style="width:${s.w*Math.pow(.5,30/s.hl)*2}%"></i></div><span class="small">${(s.w*Math.pow(.5,30/s.hl)).toFixed(1)}</span></div></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* ---- Séquences ---- */
+function sequences(){
+  const q=S.sequences.find(s=>s.id===ui.seq)||S.sequences[0];
+  return head('Séquences','Arrêt automatique sur réponse, RDV, opposition, rebond ou absence. Envois en jours ouvrés, 8 h 30–11 h 30 et 14 h–17 h.') + `
+  <div class="grid g2b">
+    <div class="card"><h2>Séquences</h2><div class="list">${S.sequences.map(s=>{const e=s.steps.reduce((t,x)=>t+x.env,0),r=s.steps.reduce((t,x)=>t+x.rep,0);return `<div class="li" style="cursor:pointer;${s.id===q.id?'background:var(--surface-2);margin:0 -8px;padding-left:8px;padding-right:8px;border-radius:6px':''}" data-act="seq" data-id="${s.id}"><div class="grow"><b>${esc(s.nom)}</b><div class="small muted">${s.steps.length} étapes · ${s.inscrits} inscrits · ${e?Math.round(r/e*100):0} % de réponses</div></div></div>`}).join('')}</div>
+      <div class="row" style="margin-top:8px"><input type="text" id="newseq" placeholder="Nom de la séquence" style="flex:1;min-width:120px"><button class="btn sm sec" data-act="addseq">Créer</button></div></div>
+    <div class="card"><div class="row between"><h2>${esc(q.nom)}</h2><span class="chip info">${q.inscrits} inscrits</span></div>
+      <div class="row" style="margin:8px 0 6px">
+        <label class="f">Validation<select id="seq-mode" data-act="seqmode">${['Brouillon (chaque e-mail validé)','Premier envoi validé','Modèle validé (envoi automatique)'].map(m=>`<option ${m===q.mode?'selected':''}>${m}</option>`).join('')}</select></label>
+        <label class="f">Plafond par jour et par boîte<input type="number" id="seq-cap" value="${q.plafond}" min="5" max="100" data-act="seqcap" style="width:90px"></label>
+      </div>
+      <div class="steps">${q.steps.map((s,i)=>`<div class="step"><span class="j">J+${s.j}</span><div><span class="ty ${s.t}">${s.t}</span> <b>${esc(s.titre)}</b><div class="small muted">${s.env} ${s.t==='email'?'envoyés':'réalisées'}${s.t==='email'?` · ${s.env?Math.round(s.ouv/s.env*100):0} % ouverts`:''} · ${s.rep} réponse${s.rep>1?'s':''}</div></div>
+        <div class="row"><button class="btn sm ghost" data-act="up" data-i="${i}" ${i?'':'disabled'} aria-label="Monter">↑</button><button class="btn sm ghost" data-act="down" data-i="${i}" ${i<q.steps.length-1?'':'disabled'} aria-label="Descendre">↓</button><button class="btn sm ghost" data-act="delstep" data-i="${i}" aria-label="Supprimer">✕</button></div></div>`).join('')}</div>
+      <div class="row" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
+        <select id="ns-t" aria-label="Type d'étape"><option value="email">E-mail</option><option value="linkedin">Tâche LinkedIn</option><option value="appel">Appel</option><option value="tache">Tâche libre</option></select>
+        <label class="row small">J+<input type="number" id="ns-j" value="${(q.steps.at(-1)?.j||0)+4}" min="0" style="width:64px"></label>
+        <input type="text" id="ns-l" placeholder="Intitulé ou consigne pour l'IA" style="flex:1;min-width:160px"><button class="btn sm" data-act="addstep">Ajouter l'étape</button></div>
+      <p class="small muted">Conditions possibles dans l'outil réel : « si ouvert sans réponse », « si fonction = DRH », « si palier A ». Tests A/B d'objets, arrêt à 100 envois par variante.</p>
+    </div></div>`;
+}
+
+/* ---- Automatisations ---- */
+function automatisations(){
+  return head('Automatisations','Quand → Si → Alors. Chaque recette peut être simulée avant d\'être activée.') + `
+  <div class="card"><h2>Nouvelle automatisation</h2><div class="row">
+    <label class="f">Quand<select id="a-q">${['Nouveau prospect','Signal détecté','Score passe en palier A','Réponse classée « intéressé »','Statut → RDV fixé','Tâche en retard de 2 jours','Chaque lundi à 8 h','Webhook CRM : opportunité perdue'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+    <label class="f">Si<select id="a-si">${['—','Palier A','Segment logistique','Département prioritaire','Effectif ≥ 100','Sans contact identifié','Compte client'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+    <label class="f">Alors<select id="a-alors">${['Enrichir les contacts','Générer le brief','Inscrire en séquence « Ouverture de site »','Créer une tâche d\'appel','Notifier le responsable (Teams)','Créer l\'opportunité dans le CRM','Inscrire en nurturing à 11 mois'].map(x=>`<option>${x}</option>`).join('')}</select></label>
+    <button class="btn" data-act="addauto" style="align-self:flex-end">Ajouter (désactivée)</button></div></div>
+  <div class="grid g2e">${S.autos.map(a=>`<div class="card"><div class="row between" style="flex-wrap:nowrap"><h3>${esc(a.nom)}</h3><label class="switch" title="${a.on?'Active':'Inactive'}"><input type="checkbox" id="au-${a.id}" data-act="toggle" data-id="${a.id}" ${a.on?'checked':''} aria-label="Activer ${esc(a.nom)}"><span></span></label></div>
+    <div class="flow"><div class="q"><b>Quand</b>${esc(a.q)}</div><i>→</i><div class="si"><b>Si</b>${esc(a.si)}</div><i>→</i><div class="al"><b>Alors</b>${esc(a.alors)}</div></div>
+    <div class="row between" style="margin-top:8px"><span class="small muted">${a.n} exécution${a.n>1?'s':''} ce mois</span><button class="btn sm ghost" data-act="simu" data-id="${a.id}">Simuler</button></div>
+    ${a.sim?`<div class="confirm small" style="margin-top:8px">${a.sim}</div>`:''}</div>`).join('')}</div>`;
+}
+function simulate(a){
+  let ps=[];
+  if(/palier A/i.test(a.si)||/palier A/i.test(a.q)) ps=S.prospects.filter(p=>score(p).tier==='A'&&!['Client','Opposé'].includes(p.statut));
+  else if(/client/i.test(a.si)) ps=S.prospects.filter(p=>p.client);
+  else if(/QSE/i.test(a.q)) ps=S.prospects.filter(p=>p.signaux.some(g=>g.t==='qse'));
+  else if(/établissement/i.test(a.q)) ps=S.prospects.filter(p=>p.signaux.some(g=>g.t==='site'));
+  else if(/contact/i.test(a.si)) ps=S.prospects.filter(p=>!mainContact(p));
+  else if(/pas maintenant/i.test(a.q)) ps=S.prospects.filter(p=>p.statut==='Pas maintenant');
+  else ps=S.prospects.filter(p=>p.statut==='En séquence').slice(0,3);
+  return ps.length? `Simulation : agirait aujourd'hui sur <b>${ps.length}</b> prospect${ps.length>1?'s':''} : ${ps.slice(0,6).map(p=>esc(p.nom)).join(', ')}${ps.length>6?'…':''}. Aucune modification faite.` : 'Simulation : aucun prospect concerné aujourd\'hui.';
+}
+
+/* ---- Score ---- */
+function scoreV(){
+  const w=W(), act=S.prospects.filter(p=>!['Opposé','Écarté'].includes(p.statut)).map(p=>({p,s:score(p)})).sort((a,b)=>b.s.t-a.s.t);
+  const n=t=>act.filter(x=>x.s.tier===t).length;
+  const sl=(k,l,min,max,help)=>`<label class="f" for="w-${k}"><span class="row between"><span>${l}</span><b id="wv-${k}">${w[k]}</b></span><input type="range" id="w-${k}" min="${min}" max="${max}" value="${w[k]}" data-w="${k}"><span class="small">${help}</span></label>`;
+  return head('Réglage du score','Les effets sont visibles immédiatement. Dans l\'outil réel, l\'IA propose un recalibrage à partir des résultats (gagné / perdu).',`<button class="btn ghost sm" data-act="resetw">Valeurs par défaut</button>`) + `
+  <div class="grid g2"><div class="card grid" style="gap:14px">
+    ${sl('fit','Poids de l\'adéquation',0,100,'Secteur, taille, sites, zone, ICPE / ERP')}
+    ${sl('int','Poids de l\'intention',0,100,'Signaux récents, avec décroissance')}
+    ${sl('acc','Poids de l\'accessibilité',0,100,'Décideur identifié, e-mail vérifié, téléphone')}
+    ${sl('seuilA','Seuil du palier A',40,95,'Entrée en séquence automatique')}
+    ${sl('seuilB','Seuil du palier B',20,80,'Séquence après validation')}
+    ${sl('tauxSST','Part de l\'effectif à former SST (%)',5,20,'INRS : 10 à 15 %')}
+    <label class="f">Départements prioritaires<input type="text" id="w-prio" value="${esc(w.prio)}" data-w="prio"></label>
+  </div>
+  <div class="card"><h2>Effet sur la base</h2><div class="kpis" style="margin-bottom:12px"><div class="kpi"><span class="l">Palier A</span><span class="v" style="color:var(--ok)">${n('A')}</span></div><div class="kpi"><span class="l">Palier B</span><span class="v" style="color:var(--warn)">${n('B')}</span></div><div class="kpi"><span class="l">Palier C</span><span class="v">${n('C')}</span></div></div>
+    <div class="list">${act.slice(0,10).map(({p,s})=>`<div class="li"><div class="grow"><div class="row between"><span class="small"><b>${esc(p.nom)}</b></span><span>${tierChip(s)} <b>${s.t}</b></span></div><div class="bar"><i style="width:${s.t}%"></i></div></div></div>`).join('')}</div></div></div>`;
+}
+
+/* ---- Conformité ---- */
+function conformite(){
+  return head('Conformité RGPD','Prospection B2B : intérêt légitime, information au premier contact, opposition immédiate, conservation 3 ans.') + `
+  <div class="grid g2e">
+    <div class="card"><h2>Liste d'opposition</h2><p class="small muted">Vérifiée à chaque import et chaque envoi, sur tous les canaux. Un domaine commence par @.</p>
+      <div class="row"><input type="text" id="opp-in" placeholder="adresse@domaine.fr ou @domaine.fr" style="flex:1;min-width:160px"><button class="btn sm" data-act="addopp">Ajouter</button></div>
+      <div class="list" style="margin-top:6px">${S.oppositions.map((o,i)=>`<div class="li"><span class="dot bad"></span><div class="grow small">${esc(o)}</div><button class="btn sm ghost" data-act="delopp" data-i="${i}">Retirer</button></div>`).join('')}</div></div>
+    <div class="card"><h2>Purge mensuelle</h2><p class="small">3 contacts sans échange de leur part depuis plus de 3 ans seront supprimés le 01/12/2026.</p>
+      <div class="tw"><table><thead><tr><th>Contact</th><th>Dernier contact entrant</th></tr></thead><tbody><tr><td>B. Renaud · Transports Ex.</td><td>04/11/2023</td></tr><tr><td>G. Simon · Hôtel Ex.</td><td>12/10/2023</td></tr><tr><td>L. Morin · Industrie Ex.</td><td>29/09/2023</td></tr></tbody></table></div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" data-act="purge">Valider la purge</button><button class="btn sm ghost" data-act="export">Exporter les données d'une personne</button></div></div>
+    <div class="card"><h2>Mention d'information (premier contact)</h2><div class="out" style="min-height:0">Vos coordonnées professionnelles proviennent de [source]. FORMA'ST (SARL, Méry-sur-Oise) les utilise, sur la base de son intérêt légitime, pour vous présenter ses formations en santé et sécurité au travail. Elles sont conservées 3 ans au plus après notre dernier échange. Vous pouvez vous opposer à tout moment en un clic [lien], ou demander l'accès et l'effacement de vos données à [adresse].</div></div>
+    <div class="card"><h2>Délivrabilité</h2><dl class="kv">
+      <dt>Domaine d'envoi</dt><dd>contact.formast-exemple.fr (sous-domaine dédié)</dd>
+      <dt>SPF / DKIM / DMARC</dt><dd><span class="chip ok">SPF</span> <span class="chip ok">DKIM</span> <span class="chip warn">DMARC p=none → passer à quarantine</span></dd>
+      <dt>Désinscription en un clic</dt><dd><span class="chip ok">en-têtes List-Unsubscribe</span></dd>
+      <dt>Rebonds (30 j)</dt><dd>1,2 % <span class="muted">(seuil d'arrêt 3 %)</span></dd><dt>Plaintes</dt><dd>0 % <span class="muted">(seuil 0,1 %)</span></dd>
+      <dt>Boîtes</dt><dd>2 boîtes · plafond 40 / jour · montée de +5 par semaine</dd></dl></div>
+  </div>`;
+}
+
+/* ---- Historique des formations ---- */
+const ECH={'SST initial':[24,90],'MAC SST':[24,90],"Exercice d'évacuation":[6,30],'Manipulation des extincteurs':[12,45],'Gestes et postures':[24,60]};
+function echeance(h){ const [m,rel]=ECH[h.prest]||[24,60]; const d=new Date(h.date); d.setMonth(d.getMonth()+m); const j=Math.round((d-TODAY)/DAY); return {d,j,rel,etat: j<0?'retard': j<=rel?'relancer':'ok'}; }
+function historique(){
+  const rows=S.historique.map(h=>({h,e:echeance(h)})).sort((a,b)=>a.e.j-b.e.j);
+  const noms=[...new Set([...S.prospects.filter(p=>p.client).map(p=>p.nom),...S.historique.map(h=>h.nom)])];
+  return head('Historique des formations', S.crmMode==='autonome'?'Table locale du module (mode autonome). En mode CRM interne, ces lignes viennent du CRM.':'Lu dans le CRM interne. La table locale ne sert plus qu\'à la reprise.', `<a class="btn sec" href="#crm">Changer de source</a>`) + `
+  <div class="kpis">
+    <div class="kpi"><span class="l">Sessions enregistrées</span><span class="v">${rows.length}</span></div>
+    <div class="kpi"><span class="l">Échéances dépassées</span><span class="v" style="color:var(--bad)">${rows.filter(r=>r.e.etat==='retard').length}</span></div>
+    <div class="kpi"><span class="l">À relancer maintenant</span><span class="v" style="color:var(--warn)">${rows.filter(r=>r.e.etat==='relancer').length}</span></div>
+    <div class="kpi"><span class="l">Stagiaires à recycler (12 mois)</span><span class="v">${rows.filter(r=>r.e.j<=365&&/SST/.test(r.h.prest)).reduce((t,r)=>t+r.h.n,0)}</span></div>
+  </div>
+  <div class="card"><div class="row between"><h2>Échéances</h2><button class="btn sm" data-act="relances" ${rows.some(r=>r.e.etat!=='ok'&&!r.h.relance)?'':'disabled'}>Créer toutes les relances dues</button></div>
+  <div class="tw"><table><thead><tr><th>Compte</th><th>Prestation</th><th>Session</th><th>Stagiaires</th><th>Échéance</th><th>État</th><th></th></tr></thead><tbody>
+  ${rows.map(({h,e})=>`<tr><td>${h.pid?`<a href="#" data-act="open" data-id="${h.pid}">${esc(h.nom)}</a>`:esc(h.nom)}<div class="small muted">${esc(h.src)}</div></td><td>${esc(h.prest)}</td><td>${fmt(new Date(h.date))}</td><td>${h.n}</td><td>${fmt(e.d)}<div class="small muted">${e.j<0?'dépassée de '+(-e.j)+' j':'dans '+e.j+' j'}</div></td>
+    <td>${e.etat==='retard'?'<span class="chip bad">en retard</span>':e.etat==='relancer'?'<span class="chip warn">à relancer</span>':'<span class="chip ok">à jour</span>'}${h.relance?' <span class="chip info">relance créée</span>':''}</td>
+    <td>${e.etat!=='ok'&&!h.relance?`<button class="btn sm sec" data-act="relance" data-id="${h.id}">Créer la relance</button>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small muted">Règles : SST et MAC SST 24 mois (relance J-90), exercice d'évacuation 6 mois (J-30), extincteurs 12 mois (J-45), gestes et postures 24 mois (J-60). Paramétrables par prestation.</p></div>
+  <div class="grid g2e">
+    <div class="card"><h2>Ajouter une session réalisée</h2><div class="grid" style="gap:8px">
+      <label class="f">Compte<input type="text" id="h-nom" list="h-noms" placeholder="Raison sociale"><datalist id="h-noms">${noms.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></label>
+      <div class="row"><label class="f">Prestation<select id="h-prest">${Object.keys(ECH).map(k=>`<option>${k}</option>`).join('')}</select></label>
+      <label class="f">Date<input type="date" id="h-date" value="2026-11-10"></label><label class="f">Stagiaires<input type="number" id="h-n" value="8" min="1" style="width:80px"></label></div>
+      <button class="btn" data-act="addhist" style="justify-self:start">Enregistrer</button></div></div>
+    <div class="card"><h2>Reprise de l'existant</h2><p class="small" style="margin-top:0">Importez un tableur (sessions, factures ou émargements) avec les colonnes : SIREN ou raison sociale, prestation, date, nombre de stagiaires, formateur. Les écrans de correspondance et de dédoublonnage sont ceux de l'<a href="#import">import de bases</a>.</p>
+      <p class="small muted" style="margin:0">Les stagiaires sont des données clients : ils ne sont jamais démarchés eux-mêmes. Leurs noms servent aux attestations et aux recyclages.</p></div>
+  </div>`;
+}
+
+/* ---- Messagerie ---- */
+function messagerie(){
+  return head('Messagerie','Brique commune, réutilisable par le CRM et l\'application AO. Réglages des serveurs à faire plus tard.') + `
+  <div class="card row between"><div class="grow" style="min-width:0"><h2>Mode test</h2><p class="small" style="margin:4px 0 0">${S.mailTest?'<b>Activé</b> : tous les envois sont redirigés vers <code>test-prospection@formast-exemple.fr</code>. Aucun prospect ne reçoit rien.':'<b>Désactivé</b> : les messages partent réellement aux prospects.'}</p></div>
+    <label class="switch"><input type="checkbox" id="mail-test" data-act="mailtest" ${S.mailTest?'checked':''} aria-label="Mode test"><span></span></label></div>
+  <div class="card"><h2>Boîtes d'envoi</h2><div class="tw"><table><thead><tr><th>Adresse</th><th>Connexion</th><th>Aujourd'hui</th><th>Rebonds 30 j</th><th>État</th></tr></thead><tbody>
+    ${S.boites.map(b=>`<tr><td>${esc(b.adr)}</td><td class="small">${esc(b.cnx)}</td><td><div class="score"><div class="bar ${b.auj/b.cap>.8?'warn':'ok'}"><i style="width:${b.auj/b.cap*100}%"></i></div><span class="small">${b.auj} / ${b.cap}</span></div></td><td>${b.reb}</td><td>${b.etat==='ok'?'<span class="chip ok">opérationnelle</span>':'<span class="chip warn">identifiants à saisir</span>'}</td></tr>`).join('')}</tbody></table></div>
+    <p class="small muted">Sous-domaine dédié contact.formast-exemple.fr (SPF, DKIM, DMARC). Arrêt automatique d'une boîte au-delà de 3 % de rebonds ou 0,1 % de plaintes.</p></div>
+  <div class="card"><div class="row between"><h2>File d'envoi</h2><button class="btn sm" data-act="flush" ${S.file.some(m=>m.st==='Programmé')?'':'disabled'}>Simuler le passage de 9 h</button></div>
+    <div class="tw"><table><thead><tr><th>Prévu</th><th>Destinataire</th><th>Objet</th><th>Boîte</th><th>Statut</th><th></th></tr></thead><tbody>
+    ${S.file.map(m=>`<tr><td class="small">${m.quand}</td><td class="small">${byId(m.pid)?`<a href="#" data-act="open" data-id="${m.pid}">${esc(byId(m.pid).nom)}</a><br>`:''}${esc(m.a)}</td><td class="small">${esc(m.obj)}</td><td class="small">${esc(S.boites[m.boite]?.adr.split('@')[0]||'')}</td><td><span class="chip ${m.st==='Programmé'?'info':m.st.startsWith('Envoyé')?'ok':m.st==='Annulé'?'':'warn'}">${esc(m.st)}</span></td>
+      <td>${m.st==='Programmé'?`<button class="btn sm ghost" data-act="cancelmail" data-id="${m.id}">Annuler</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">File vide. Validez un e-mail depuis une fiche prospect.</td></tr>'}</tbody></table></div>
+    <p class="small muted">Envoi idempotent (jamais deux fois), jours ouvrés, 8 h 30–11 h 30 et 14 h–17 h, espacement de 2 à 6 minutes. Pied de page RGPD et lien d'opposition ajoutés automatiquement.</p></div>
+  <div class="grid g2e">
+    <div class="card"><h2>Relève des réponses</h2><dl class="kv"><dt>Fréquence</dt><dd>toutes les 5 minutes</dd><dt>Dernière relève</dt><dd>18/11/2026 10:35 · 2 réponses</dd><dt>Rattachement</dt><dd>en-têtes In-Reply-To / References, puis adresse</dd><dt>Classement</dt><dd><a href="#reponses">voir les réponses</a></dd></dl></div>
+    <div class="card"><div class="row between" style="flex-wrap:nowrap"><h2>Suivi d'ouverture (pixel)</h2><label class="switch"><input type="checkbox" id="pixel" disabled aria-label="Suivi d'ouverture"><span></span></label></div>
+      <p class="small" style="margin:6px 0 0">Désactivé par défaut : la CNIL encadre les pixels de suivi dans les e-mails. À activer seulement après validation juridique. Sans lui, le signal « e-mails ouverts sans réponse » n'est pas calculé.</p></div>
+  </div>`;
+}
+
+/* ---- CRM ---- */
+function crm(){
+  const p=byId(ui.pid)||S.prospects[0], s=score(p), b=besoin(p);
+  return head('Intégration CRM','Le CRM reste maître des clients et des opportunités ; l\'agent est maître des prospects jusqu\'à leur qualification.') + `
+  <div class="card"><div class="row between"><h2>Source des clients et de l'historique</h2>
+    <div class="tabs" style="margin:0;border:0">${[['autonome','Mode autonome (test)'],['crm_api','CRM interne (API)']].map(([k,l])=>`<button data-act="crmmode" data-k="${k}" class="${S.crmMode===k?'on':''}">${l}</button>`).join('')}</div></div>
+    ${S.crmMode==='autonome'
+      ? `<p style="margin:0">L'agent utilise ses <b>propres tables</b> : comptes clients et <a href="#historique">historique des formations</a> alimentés par import. Rien n'est écrit ailleurs. La commande <code>migrer_vers_crm</code> reversera tout dans le CRM le moment venu.</p>`
+      : `<p style="margin:0">L'agent lit et écrit dans le CRM <b>par son API interne</b> (passerelle <code>crm_api.py</code>) : clients, formations réalisées, opportunités, activités, oppositions. Webhooks signés dans les deux sens ; si le CRM ne répond pas, les écritures attendent dans une file et l'agent continue de fonctionner. Les écrans ne changent pas.</p>`}
+    <p class="small muted" style="margin:8px 0 0">Réglage <code>PROSPECTION_CRM = "${S.crmMode}"</code> · clé commune : SIREN · l'application AO fournit acheteurs, attributions, catalogue et références par son API.</p></div>
+  <div class="card"><h2>Trois applications séparées</h2>
+    <div class="grid g3" style="align-items:stretch">
+      <div class="kpi"><span class="l">Application AO (Veille AO)</span><b>Profil, catalogue, références, AO, attributions, DECP</b><span class="small muted">API AO en lecture · reçoit les acheteurs suivis</span></div>
+      <div class="kpi" style="border-color:var(--accent)"><span class="l">Agent de prospection</span><b>Prospects, score, signaux, séquences, messagerie, tâches</b><span class="small muted">Test : dans le projet AO · cible : dans le CRM</span></div>
+      <div class="kpi"><span class="l">CRM interne (séparé)</span><b>Clients, contacts, opportunités, formations réalisées</b><span class="small muted">API CRM en lecture et écriture · webhooks</span></div>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Clé commune : SIREN. Jeton par application, webhooks signés et rejouables sans doublon, liste d'opposition synchronisée dans les deux sens.</p>
+    <div class="grid g2e" style="margin-top:10px">
+      <div class="kpi"><span class="l">Planif ST et optimiseur de tournées</span><b>Lecture seule, en option</b><span class="small muted">Sessions planifiées (date, lieu, client) pour proposer des prospects proches. Planning et charge des formateurs restent dans Planif ST.</span></div>
+      <div class="kpi"><span class="l">Outil de facturation (relié à Penny Line)</span><b>Hors périmètre</b><span class="small muted">Devis, factures et encaissements passent par le CRM et l'outil de facturation. L'agent n'y accède pas.</span></div>
+    </div></div>
+  <div class="grid g2">
+    <div class="card"><h2>Aperçu du panneau intégré (niveau 3)</h2>
+      <div class="crm"><div class="h">CRM interne › Comptes › ${esc(p.nom)}</div><div style="padding:12px" class="grid g2e">
+        <div class="small"><b>Fiche compte du CRM</b><dl class="kv" style="margin-top:6px"><dt>Raison sociale</dt><dd>${esc(p.nom)}</dd><dt>Ville</dt><dd>${esc(p.ville)}</dd><dt>Propriétaire</dt><dd>${esc(p.owner||'—')}</dd><dt>Opportunités</dt><dd>${p.statut==='Transmis au CRM'?'1 ouverte':'aucune'}</dd></dl></div>
+        <div class="widget small"><div class="row between"><b>Assistant prospection</b>${tierChip(s)}</div>
+          <p style="margin:6px 0">${esc(explain(p))}</p>
+          <p style="margin:6px 0"><b>Besoin :</b> ${b.sst} SST, ${b.exo} exercices / an · ${eur(b.an1)}</p>
+          <p style="margin:6px 0"><b>Prochaine action :</b> ${topSig(p)?'contacter sur le signal « '+SIGNAUX[topSig(p).t].l.toLowerCase()+' »':'nurturing'}</p>
+          <div class="row"><button class="btn sm" data-act="open" data-id="${p.id}">Rédiger</button><button class="btn sm sec" data-act="tocrm">Créer l'opportunité</button></div></div></div></div>
+      <p class="small muted">Compte affiché : le dernier prospect ouvert. Chaque brique (panneau, rédaction, tâches, messagerie, assistant) peut être intégrée seule.</p></div>
+    <div class="card"><h2>Journal des événements</h2><div class="tw"><table><thead><tr><th>Date</th><th>Événement</th><th>Objet</th></tr></thead><tbody>${S.crmLog.map(l=>`<tr><td class="small">${l.d}</td><td><code>${l.ev}</code></td><td class="small">${esc(l.obj)}</td></tr>`).join('')}</tbody></table></div></div>
+  </div>
+  <div class="card"><h2>Correspondance des objets</h2><div class="tw"><table><thead><tr><th>Agent</th><th>CRM</th><th>Maître</th><th>Sens</th></tr></thead><tbody>
+    <tr><td>Compte prospect</td><td>Compte (statut prospect)</td><td>Agent</td><td>→ au RDV fixé ou sur demande</td></tr>
+    <tr><td>Compte client</td><td>Compte client</td><td>CRM</td><td>← lecture (exclusion, recyclages)</td></tr>
+    <tr><td>Contact</td><td>Contact</td><td>Agent puis CRM</td><td>↔ dernier modifié gagne, conflit signalé</td></tr>
+    <tr><td>Prospect qualifié (RDV fixé)</td><td>Opportunité</td><td>CRM</td><td>→ création, ← gagnée / perdue</td></tr>
+    <tr><td>E-mails, appels, notes</td><td>Activités (chronologie)</td><td>Agent</td><td>→</td></tr>
+    <tr><td>Formations réalisées</td><td>Sessions / stagiaires</td><td>CRM</td><td>← (dates de MAC SST)</td></tr>
+    <tr><td>Opposition</td><td>Opposition / désabonnement</td><td>Les deux</td><td>↔ immédiat</td></tr></tbody></table></div>
+    <p class="small muted">Événements émis : prospect.cree, prospect.qualifie, prospect.score_change, reponse.recue, rdv.fixe, opposition.enregistree. Reçus : client.cree, opportunite.gagnee, opportunite.perdue, formation.realisee, ao.resultat (application AO).</p></div>`;
+}
+
+/* ============ Actions ============ */
+let toastT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,3200); }
+const now = ()=>fmt(TODAY)+' '+new Date().toTimeString().slice(0,5);
+const addHist=(p,txt)=>p.hist.push({d:fmt(TODAY),txt});
+const crmLog=(ev,obj)=>S.crmLog.unshift({d:now(),ev,obj,ok:true});
+function addTask(t,pid,titre,ech=0){ S.tasks.push({id:++S.nextId,t,pid,titre,ech,fait:false}); }
+function inscrire(p,seqId){ const q=S.sequences.find(s=>s.id===+seqId); if(!q||p.statut==='Opposé'||!mainContact(p)) return false; p.statut='En séquence'; q.inscrits++; addHist(p,`Inscrit dans la séquence « ${q.nom} »`); return true; }
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  if(e.target.closest('[data-stop]') && el.dataset.act==='open') return;
+  const a=el.dataset.act, id=el.dataset.id, k=el.dataset.k, p=byId(ui.pid);
+  if(el.tagName==='A' && el.getAttribute('href')==='#') e.preventDefault();
+  if(['open','back','newp','enrich','inscrire','tache','tocrm','canal','regen','copy','valider','tachecanal','addc','ecarter','opposer','tf','session','endsession','out','rep','ract','sugg','confirm','cancel','clearchat','sample','doimport','seq','addseq','up','down','delstep','addstep','addauto','simu','resetw','addopp','delopp','purge','export','crmmode','relance','relances','addhist','flush','cancelmail','bulkseq','bulkcrm','bulkclear'].includes(a)) e.preventDefault();
+  switch(a){
+    case 'open': ui.canal=el.dataset.canal||'email'; ui.cidx=0; ui.consigne=''; go('fiche',id); break;
+    case 'back': go('prospects'); break;
+    case 'newp': { const np=P(++S.nextId,'Nouveau prospect','—','95','logistique','52.10B',50,1,{statut:'Nouveau',src:'Saisie manuelle',siren:''}); S.prospects.push(np); save(); toast('Prospect créé. Complétez la fiche ; le rapprochement SIRENE se fera au premier enregistrement.'); go('fiche',np.id); break; }
+    case 'enrich': { let n=0; p.contacts.forEach(c=>{ if(c.es==='absent'||c.es==='probable'){ const dom=p.nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]+/g,'').slice(0,14)+'.example'; if(!c.email){const [pr,...nm]=c.n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(' '); c.email=pr[0]+'.'+nm.join('')+'@'+dom;} c.es='verifie'; n++; } });
+      if(!p.contacts.some(c=>c.role==='decideur')){ p.contacts.push(C('Responsable QSE (à confirmer)','Responsable QHSE','decideur','qse@'+p.nom.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]+/g,'').slice(0,14)+'.example','probable')); n++; }
+      addHist(p,`Enrichissement : ${n} contact${n>1?'s':''} mis à jour (coût 0,12 €)`); ui.gen=null; save(); render(); toast(n?`${n} contact${n>1?'s':''} enrichi${n>1?'s':''}. Coût : 0,12 €.`:'Rien à enrichir.'); break; }
+    case 'inscrire': { const sid=$('#fiche-seq').value; if(inscrire(p,sid)){ save(); render(); toast('Inscrit en séquence. Le premier e-mail attend votre validation dans les tâches.'); addTask('email',p.id,`Valider le 1er e-mail pour ${p.nom}`,0); save(); } else toast('Inscription impossible : pas de contact ou opposition.'); break; }
+    case 'tache': addTask('appel',p.id,`Appeler ${mainContact(p)?.n||'le standard'} (${p.nom})`,1); addHist(p,'Tâche d\'appel créée pour demain'); save(); render(); toast('Tâche d\'appel créée pour demain.'); break;
+    case 'tocrm': p.statut='Transmis au CRM'; addHist(p,'Transmis au CRM : opportunité créée avec le besoin estimé et le brief'); crmLog('prospect.qualifie',p.nom+' → opportunité créée'); save(); render(); toast('Envoyé au CRM : compte, contacts, brief et opportunité.'); break;
+    case 'canal': ui.canal=k; ui.gen=null; render(); break;
+    case 'regen': ui.consigne=$('#g-cons').value; ui.gen=null; render(); toast(ui.consigne?'Texte régénéré avec la consigne.':'Texte régénéré.'); break;
+    case 'copy': { const t=$('#g-out'); const v=t.value; (navigator.clipboard?.writeText(v)||Promise.reject()).then(()=>toast('Copié.')).catch(()=>{t.select();toast('Texte sélectionné : copiez-le avec Ctrl+C.');}); break; }
+    case 'valider': { const cs=p.contacts.filter(c=>c.es!=='bloque'), c=cs[ui.cidx]||cs[0]; if(S.oppositions.includes(c.email)){toast('Envoi bloqué : adresse sur la liste d\'opposition.');break;} if(p.statut!=='En séquence') p.statut='En séquence'; addHist(p,`E-mail validé pour ${c.n}, envoi programmé demain 9 h 12`); S.file.unshift({id:++S.nextId,pid:p.id,a:c.email,obj:ui.gen.titre.replace(/^Objet : /,''),quand:'19/11/2026 09:12',boite:p.owner==='S. Diallo'?1:0,st:'Programmé'}); save(); render(); toast(S.mailTest?'Ajouté à la file d\'envoi (mode test : redirigé vers l\'adresse interne).':'Envoi programmé demain à 9 h 12 (plage d\'envoi, plafond respecté).'); break; }
+    case 'tachecanal': addTask(ui.canal==='appel'?'appel':'linkedin',p.id,(ui.canal==='appel'?'Appeler ':'LinkedIn : contacter ')+(mainContact(p)?.n||p.nom),0); save(); render(); toast('Tâche créée avec le texte préparé.'); break;
+    case 'addc': { const n=$('#nc-n').value.trim(), f=$('#nc-f').value.trim(); if(!n){toast('Indiquez au moins un nom.');break;} p.contacts.push(C(n,f||'—',/dir|drh|g[ée]rant|qse|hse|responsable/i.test(f)?'decideur':'utilisateur','','absent')); addHist(p,'Contact ajouté : '+n); save(); ui.gen=null; render(); toast('Contact ajouté. Lancez l\'enrichissement pour trouver son e-mail.'); break; }
+    case 'ecarter': p.statut='Écarté'; addHist(p,'Écarté manuellement'); save(); render(); toast('Prospect écarté.'); break;
+    case 'opposer': p.statut='Opposé'; p.contacts.forEach(c=>{ if(c.email&&!S.oppositions.includes(c.email)) S.oppositions.push(c.email); c.es='bloque'; }); addHist(p,'Opposition enregistrée (tous canaux)'); crmLog('opposition.enregistree',p.nom); save(); ui.gen=null; render(); toast('Opposition enregistrée et transmise au CRM.'); break;
+    case 'tf': ui.tfilter=k; render(); break;
+    case 'session': ui.session=true; render(); break;
+    case 'endsession': ui.session=null; render(); break;
+    case 'out': { const t=S.tasks.find(x=>x.id===+id), tp=byId(t.pid); t.fait=true; const cr=($('#cr')?.value||'').trim();
+      if(k!=='messagerie'){ const dc={sst:$('#pb-sst')?.value??'',exo:$('#pb-exo')?.value||'inconnu',dec:$('#pb-dec')?.value||'',presta:$('#pb-presta')?.value||'',fin:$('#pb-fin')?.value||'',ech:$('#pb-ech')?.value||''}; if(dc.sst!==''||dc.exo!=='inconnu'||dc.dec||dc.presta){ tp.decouverte=dc; addHist(tp,`Découverte : ${dc.sst!==''?dc.sst+' SST formés, ':''}dernier exercice ${dc.exo}${dc.dec?', décideur '+dc.dec:''}${dc.presta?', prestataire '+dc.presta:''}, financement ${dc.fin}, échéance ${dc.ech}`); } }
+      if(k==='rdv'){ tp.statut='RDV fixé'; addHist(tp,'Appel : RDV fixé'+(cr?' · '+cr:'')); crmLog('rdv.fixe',tp.nom+' → opportunité et fiche de préparation'); toast('RDV fixé : opportunité créée dans le CRM, fiche de préparation prête.'); }
+      else if(k==='rappel'){ addTask('appel',tp.id,'Rappeler '+(mainContact(tp)?.n||tp.nom),15); addHist(tp,'Appel : à rappeler dans 15 jours'+(cr?' · '+cr:'')); toast('Rappel planifié dans 15 jours.'); }
+      else if(k==='messagerie'){ addTask('appel',tp.id,'Nouvel essai : '+(mainContact(tp)?.n||tp.nom),1); addHist(tp,'Appel : messagerie'); toast('Nouvel essai demain.'); }
+      else { tp.statut='Pas maintenant'; addHist(tp,'Appel : pas intéressé, reprise à 11 mois'+(cr?' · '+cr:'')); toast('Reprise planifiée dans 11 mois.'); }
+      save(); render(); break; }
+    case 'rep': ui.rep=+id; render(); break;
+    case 'ract': { const r=S.replies.find(x=>x.id===+id), rp=byId(r.pid);
+      if(k==='rdv'){ rp.statut='A répondu'; addHist(rp,'Réponse positive : 3 créneaux proposés (jeudi 14 h, 15 h 30, vendredi 10 h)'); toast('Brouillon de réponse avec 3 créneaux créé. Statut : A répondu.'); }
+      if(k==='tcall'){ addTask('appel',rp.id,`Appeler ${r.de} (demande de rappel)`,2); toast('Tâche d\'appel créée pour jeudi.'); }
+      if(k==='nc'){ rp.contacts.push(C(r.nc.n,r.nc.f,'decideur',r.nc.email,'verifie')); addHist(rp,`Nouveau contact ${r.nc.n} (recommandé par ${r.de}), inscrit en séquence`); toast(`${r.nc.n} ajouté et inscrit, avec mention de la recommandation.`); }
+      if(k==='reprise'){ rp.statut='Pas maintenant'; addTask('appel',rp.id,`Reprendre contact avec ${r.de} (plan de formation)`,104); addHist(rp,'Pas maintenant : reprise le 02/03/2027'); toast('Reprise planifiée le 02/03/2027.'); }
+      if(k==='pause'){ addHist(rp,'Séquence en pause jusqu\'au 26/11/2026'); toast('Séquence en pause jusqu\'au 26/11.'); }
+      if(k==='reprise11'){ rp.statut='Pas maintenant'; addHist(rp,'Déjà équipé : prestataire noté, reprise à 11 mois'); toast('Reprise dans 11 mois, prestataire noté pour la veille concurrence.'); }
+      r.done=true; save(); render(); break; }
+    case 'sugg': $('#chatin').value=k; $('#chatform').requestSubmit(); break;
+    case 'confirm': { const pd=ui.pending; let n=0; pd.ids.forEach(i=>{ if(inscrire(byId(i),pd.seq)) n++; }); S.chat.push({r:'a',t:`Fait : ${n} prospect${n>1?'s':''} inscrit${n>1?'s':''} dans « ${S.sequences.find(s=>s.id===pd.seq).nom} ». ${pd.ids.length-n?`${pd.ids.length-n} ignoré(s) : sans contact ou opposé.`:''}`}); ui.pending=null; save(); render(); break; }
+    case 'cancel': ui.pending=null; S.chat.push({r:'a',t:'Annulé. Rien n\'a été modifié.'}); render(); break;
+    case 'clearchat': S.chat=[]; ui.pending=null; save(); render(); break;
+    case 'sample': loadCSV(SAMPLE,'exemple.csv'); toast('Fichier d\'exemple chargé : 8 lignes.'); break;
+    case 'doimport': { let n=0; ui.imp.rows.filter(r=>r.st==='Nouveau'||r.st==='À vérifier').forEach(r=>{ const seg=nafSeg(r.naf||''); const np=P(++S.nextId,r.nom===r.nom.toUpperCase()?r.nom.toLowerCase().replace(/(^|[\s-])(\p{L})/gu,(m,a,b)=>a+b.toUpperCase()):r.nom,r.ville||'—',cpDep(r.cp),seg,(r.naf||'').replace(/^(\d\d)(\d\d)/,'$1.$2'),r.eff||20,1,{statut:r.st==='À vérifier'?'À qualifier':'Nouveau',src:'Import '+ui.imp.name,siren:r.siret&&luhn(r.siret)?r.siret.slice(0,9).replace(/(\d{3})(\d{3})(\d{3})/,'$1 $2 $3'):'',owner:'',contacts:r.contact?[C(r.contact,r.fonction||'—',/qse|hse|drh|dir|g[ée]rant|responsable/i.test(r.fonction)?'decideur':'utilisateur',/@(gmail|hotmail|yahoo|orange|free|wanadoo|outlook|laposte)\./.test(r.email)?'':r.email,r.email&&!/@(gmail|hotmail|yahoo|orange|free|wanadoo|outlook|laposte)\./.test(r.email)?'probable':'absent',r.tel)]:[]}); np.hist.push({d:fmt(TODAY),txt:'Créé par import ('+ui.imp.name+')'}); S.prospects.push(np); n++; });
+      ui.imp=null; save(); toast(`${n} prospects importés. Scores calculés ; rapprochement SIRENE en cours.`); ui.filt={q:'',tier:'',seg:'',dep:'',statut:'',sig:false,nc:false}; ui.sv='tous'; go('prospects'); break; }
+    case 'seq': ui.seq=+id; render(); break;
+    case 'addseq': { const n=$('#newseq').value.trim(); if(!n){toast('Donnez un nom à la séquence.');break;} const ns={id:++S.nextId,nom:n,mode:'Premier envoi validé',plafond:40,inscrits:0,steps:[{t:'email',j:0,titre:'Premier e-mail (à rédiger)',env:0,ouv:0,rep:0}]}; S.sequences.push(ns); ui.seq=ns.id; save(); render(); toast('Séquence créée.'); break; }
+    case 'up': case 'down': { const q=S.sequences.find(s=>s.id===ui.seq), i=+el.dataset.i, j=a==='up'?i-1:i+1; [q.steps[i],q.steps[j]]=[q.steps[j],q.steps[i]]; const js=q.steps.map(s=>s.j).sort((x,y)=>x-y); q.steps.forEach((s,x)=>s.j=js[x]); save(); render(); break; }
+    case 'delstep': { const q=S.sequences.find(s=>s.id===ui.seq); q.steps.splice(+el.dataset.i,1); save(); render(); toast('Étape supprimée.'); break; }
+    case 'addstep': { const q=S.sequences.find(s=>s.id===ui.seq); const l=$('#ns-l').value.trim(); if(!l){toast('Indiquez l\'intitulé de l\'étape.');break;} q.steps.push({t:$('#ns-t').value,j:+$('#ns-j').value||0,titre:l,env:0,ouv:0,rep:0}); q.steps.sort((x,y)=>x.j-y.j); save(); render(); toast('Étape ajoutée.'); break; }
+    case 'addauto': S.autos.unshift({id:++S.nextId,on:false,nom:'Automatisation personnalisée',q:$('#a-q').value,si:$('#a-si').value,alors:$('#a-alors').value,n:0}); save(); render(); toast('Automatisation ajoutée, désactivée. Simulez-la avant de l\'activer.'); break;
+    case 'simu': { const au=S.autos.find(x=>x.id===+id); au.sim=simulate(au); render(); break; }
+    case 'resetw': S.weights=seed().weights; save(); render(); toast('Valeurs par défaut rétablies.'); break;
+    case 'addopp': { const v=$('#opp-in').value.trim().toLowerCase(); if(!/^(@[\w.-]+\.\w+|[\w.+-]+@[\w.-]+\.\w+)$/.test(v)){toast('Saisissez une adresse e-mail ou un domaine commençant par @.');break;} if(!S.oppositions.includes(v)) S.oppositions.unshift(v); let n=0; S.prospects.forEach(pp=>pp.contacts.forEach(c=>{ if(c.email&&(v.startsWith('@')?c.email.endsWith(v.slice(1)):c.email===v)){c.es='bloque';n++;} })); crmLog('opposition.enregistree',v); save(); render(); toast(`Opposition ajoutée${n?` : ${n} contact${n>1?'s':''} bloqué${n>1?'s':''}`:''}.`); break; }
+    case 'delopp': S.oppositions.splice(+el.dataset.i,1); save(); render(); toast('Retiré de la liste d\'opposition.'); break;
+    case 'purge': toast('Purge validée : 3 contacts supprimés, trace conservée dans le journal.'); break;
+    case 'export': toast('Dans l\'outil réel : export JSON et PDF de toutes les données de la personne.'); break;
+    case 'bulkseq': { const sid=$('#bulk-seq').value; let n=0; ui.sel.forEach(i=>{ if(inscrire(byId(i),sid)) n++; }); ui.sel.clear(); save(); render(); toast(`${n} prospect${n>1?'s':''} inscrit${n>1?'s':''}.`); break; }
+    case 'bulkcrm': ui.sel.forEach(i=>{ const pp=byId(i); pp.statut='Transmis au CRM'; crmLog('prospect.qualifie',pp.nom); }); toast(`${ui.sel.size} prospect(s) envoyé(s) au CRM.`); ui.sel.clear(); save(); render(); break;
+    case 'bulkclear': ui.sel.clear(); render(); break;
+    case 'pal': openPal(); break;
+    case 'delai': S.aiCols=S.aiCols.filter(x=>x!==k); save(); render(); break;
+    case 'slots': { const t=$('#g-out'); const ins="\n\nJe vous propose trois créneaux de 20 minutes (Teams ou téléphone) :\n· jeudi 26/11 à 10 h\n· vendredi 27/11 à 14 h 30\n· lundi 30/11 à 11 h\nOu choisissez directement le vôtre : [lien de prise de rendez-vous]"; const v=t.value; const pos=v.indexOf('\n\nBien cordialement'); t.value= pos>0? v.slice(0,pos)+ins+v.slice(pos) : v+ins; ui.gen.texte=t.value; majQualite(); toast('Créneaux libres de votre agenda Microsoft 365 insérés.'); break; }
+    case 'theme': toggleTheme(); break;
+    case 'pview': ui.pview=k; render(); break;
+    case 'sv': { ui.sv=k; const f={q:'',tier:'',seg:'',dep:'',statut:'',sig:false,nc:false}; if(k==='mesA') f.tier='A'; if(k==='signaux') f.sig=true; if(k==='sanscontact') f.nc=true; if(k==='public') f.seg='collectivite'; if(k==='clients') f.statut='Client'; ui.filt=f; render(); break; }
+    case 'fnav': { const ids=filtered().map(x=>x.p.id), i=ids.indexOf(ui.pid), n=ids[i+ +k]; if(n){ ui.cidx=0; ui.consigne=''; go('fiche',n); } break; }
+    case 'gorep': ui.rep=+id; go('reponses'); break;
+    case 'nbasnooze': S.nbaDone.push(k); save(); render(); toast('Reporté à demain.'); break;
+    case 'nbadone': { S.nbaDone.push(k); const t=S.tasks.find(x=>x.id===+id); if(t) t.fait=true; S.doneToday++; save(); render(); toast('Bien joué. Action suivante en tête de liste.'); break; }
+    case 'lvl': S.niveaux[k]=el.dataset.v; S.journal.unshift({h:new Date().toTimeString().slice(0,5),ic:'bot',txt:`Réglage modifié : « ${NIVEAUX.find(n=>n[0]===k)[1]} » → ${({manuel:'je le fais',proposer:"l'agent propose",auto:'automatique'})[el.dataset.v]}.`}); save(); render(); toast('Niveau enregistré.'); break;
+    case 'prepcamp': { const c=S.campagnes.find(x=>x.id===+id); c.etat='Brouillon'; save(); render(); toast(c.cible?`Brouillon prêt : objet, e-mail, post LinkedIn et liste de ${c.cible} destinataires.`:'Brouillon prêt : textes et page à relire.'); break; }
+    case 'valcamp': { const c=S.campagnes.find(x=>x.id===+id); c.etat='Prête'; save(); render(); toast('Campagne validée.'); break; }
+    case 'sendcamp': { const c=S.campagnes.find(x=>x.id===+id); c.etat='Envoyée'; save(); render(); toast(S.mailTest?'Campagne programmée (mode test : envois redirigés).':'Campagne programmée en début de mois, plafonds respectés.'); break; }
+    case 'copypost': { const t=POSTS[+el.dataset.i]; (navigator.clipboard?.writeText(t)||Promise.reject()).then(()=>toast('Post copié.')).catch(()=>toast('Copie refusée par le navigateur : sélectionnez le texte.')); break; }
+    case 'crmmode': S.crmMode=k; save(); render(); toast(k==='autonome'?'Mode autonome : tables locales du module.':'Mode CRM interne : clients et historique lus par l\'API du CRM.'); break;
+    case 'relance': case 'relances': { const list=a==='relance'?[S.historique.find(h=>h.id===+id)]:S.historique.filter(h=>echeance(h).etat!=='ok'&&!h.relance); list.forEach(h=>{ h.relance=true; addTask('appel',h.pid||0,`Relance ${h.prest} : ${h.nom} (${h.n} stagiaire${h.n>1?'s':''}, échéance ${fmt(echeance(h).d)})`,0); }); save(); render(); if(ui.view==='journee'){S.doneToday++; save(); render();} toast(`${list.length} relance${list.length>1?'s':''} créée${list.length>1?'s':''} dans les tâches.`); break; }
+    case 'addhist': { const nom=$('#h-nom').value.trim(); if(!nom){toast('Indiquez le compte.');break;} const pp=S.prospects.find(x=>x.nom.toLowerCase()===nom.toLowerCase()); S.historique.push({id:++S.nextId,nom,pid:pp?pp.id:0,prest:$('#h-prest').value,date:$('#h-date').value||'2026-11-10',n:+$('#h-n').value||1,formateur:'—',src:'Saisie'}); save(); render(); toast('Session enregistrée, échéance calculée.'); break; }
+    case 'flush': { let n=0; S.file.forEach(m=>{ if(m.st==='Programmé'){ m.st=S.mailTest?'Envoyé (redirigé test)':'Envoyé'; n++; const pp=byId(m.pid); if(pp) addHist(pp,`E-mail envoyé${S.mailTest?' (mode test, redirigé)':''} : ${m.obj}`); } }); S.boites[0].auj+=n; save(); render(); toast(`${n} message${n>1?'s':''} ${S.mailTest?'redirigé'+(n>1?'s':'')+' vers l\'adresse de test':'envoyé'+(n>1?'s':'')}.`); break; }
+    case 'cancelmail': { const m=S.file.find(x=>x.id===+id); m.st='Annulé'; save(); render(); toast('Envoi annulé.'); break; }
+  }
+});
+document.addEventListener('change',e=>{
+  const el=e.target, a=el.dataset.act, p=byId(ui.pid);
+  if(el.dataset.filt){ const k=el.dataset.filt; ui.filt[k]= el.type==='checkbox'?el.checked:el.value; if(k!=='q') render(); return; }
+  if(el.dataset.w){ const k=el.dataset.w; S.weights[k]= k==='prio'?el.value:+el.value; save(); render(); return; }
+  if(el.dataset.lim){ S.limites[el.dataset.lim]=+el.value; save(); render(); return; }
+  switch(a){
+    case 'sel': { const id=+el.dataset.id; el.checked?ui.sel.add(id):ui.sel.delete(id); render(); break; }
+    case 'selall': filtered().forEach(({p})=> el.checked?ui.sel.add(p.id):ui.sel.delete(p.id)); render(); break;
+    case 'statut': p.statut=el.value; addHist(p,'Statut → '+el.value); if(el.value==='RDV fixé') crmLog('rdv.fixe',p.nom+' → opportunité créée'); save(); render(); toast('Statut mis à jour.'+(el.value==='RDV fixé'?' Opportunité créée dans le CRM.':'')); break;
+    case 'gc': ui.cidx=+el.value; ui.gen=null; render(); break;
+    case 'gton': ui.ton=el.value; ui.gen=null; render(); break;
+    case 'tdone': { const t=S.tasks.find(x=>x.id===+el.dataset.id); t.fait=el.checked; save(); render(); break; }
+    case 'toggle': { const au=S.autos.find(x=>x.id===+el.dataset.id); au.on=el.checked; save(); nav(); toast(au.on?'Automatisation activée.':'Automatisation désactivée.'); break; }
+    case 'map': ui.imp.map[+el.dataset.i]=el.value; analyse(); render(); break;
+    case 'seqmode': S.sequences.find(s=>s.id===ui.seq).mode=el.value; save(); toast('Mode de validation enregistré.'); break;
+    case 'seqcap': S.sequences.find(s=>s.id===ui.seq).plafond=+el.value; save(); break;
+    case 'addai': if(el.value){ S.aiCols.push(el.value); save(); render(); toast("Colonne ajoutée : l'IA la remplit pour chaque ligne, avec sa source."); } break;
+    case 'mailtest': S.mailTest=el.checked; save(); render(); toast(S.mailTest?'Mode test activé : aucun envoi réel.':'Mode test désactivé : les envois partiront réellement.'); break;
+    case 'reclass': { const r=S.replies.find(x=>x.id===+el.dataset.id); if(el.value){ r.cl=el.value; r.conf=100; save(); render(); toast('Classement corrigé : la correction sert au jeu de test du classement.'); } break; }
+  }
+  if(el.id==='file' && el.files[0]){ const f=el.files[0]; const rd=new FileReader(); rd.onload=()=>loadCSV(String(rd.result),f.name); rd.readAsText(f); }
+});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.filt==='q'){ ui.filt.q=el.value; const pos=el.selectionStart; render(); const n=$('#f-q'); n.focus(); n.setSelectionRange(pos,pos); }
+  if(el.dataset.w && el.type==='range'){ const o=$('#wv-'+el.dataset.w); if(o) o.textContent=el.value; }
+  if(el.id==='g-out'){ if(ui.gen) ui.gen.texte=el.value; majQualite(); }
+  if(el.id==='pal-in'){ ui.pal.q=el.value; ui.pal.i=0; renderPal(); }
+});
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='chatform') return; e.preventDefault();
+  const v=$('#chatin').value.trim(); if(!v) return;
+  S.chat.push({r:'u',t:v}); const r=answer(v); S.chat.push({r:'a',t:r.t,h:r.h});
+  ui.pending = r.ids&&r.ids.length&&r.seq ? {ids:r.ids,seq:r.seq,label:`Inscrire ${r.ids.length} prospect${r.ids.length>1?'s':''} dans « ${S.sequences.find(s=>s.id===r.seq).nom} » ?`} : null;
+  save(); render(); setTimeout(()=>$('#chatin')?.focus(),0);
+});
+document.addEventListener('dragover',e=>{ const d=e.target.closest('#drop'); if(d){e.preventDefault(); d.classList.add('over');} });
+document.addEventListener('dragleave',e=>{ const d=e.target.closest('#drop'); if(d) d.classList.remove('over'); });
+document.addEventListener('drop',e=>{ const d=e.target.closest('#drop'); if(!d) return; e.preventDefault(); const f=e.dataTransfer.files[0]; if(f){ const rd=new FileReader(); rd.onload=()=>loadCSV(String(rd.result),f.name); rd.readAsText(f);} });
+
+document.addEventListener('keydown',e=>{
+  const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||'');
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); ui.pal?closePal():openPal(); return; }
+  if(ui.pal){ const n=palItems().length;
+    if(e.key==='Escape'){ closePal(); } else if(e.key==='ArrowDown'){ e.preventDefault(); ui.pal.i=(ui.pal.i+1)%Math.max(1,n); renderPal(); } else if(e.key==='ArrowUp'){ e.preventDefault(); ui.pal.i=(ui.pal.i-1+n)%Math.max(1,n); renderPal(); } else if(e.key==='Enter'){ e.preventDefault(); runPal(ui.pal.i); }
+    return; }
+  if(typing) return;
+  if(e.key==='/'){ e.preventDefault(); openPal(); }
+  if(ui.view==='fiche'&&(e.key==='j'||e.key==='k')){ const b=document.querySelector(`[data-act=fnav][data-k="${e.key==='j'?1:-1}"]`); if(b&&!b.disabled) b.click(); }
+});
+document.addEventListener('mousedown',e=>{ if(!ui.pal) return; const li=e.target.closest('[data-pi]'); if(li){ e.preventDefault(); runPal(+li.dataset.pi); return; } if(e.target.dataset.pal==='back') closePal(); });
+document.addEventListener('dragstart',e=>{ const c=e.target.closest?.('[data-kid]'); if(!c) return; e.dataTransfer.setData('text/plain',c.dataset.kid); e.dataTransfer.effectAllowed='move'; c.classList.add('drag'); });
+document.addEventListener('dragend',e=>{ e.target.classList?.remove('drag'); document.querySelectorAll('.kcol.over').forEach(x=>x.classList.remove('over')); });
+document.addEventListener('dragover',e=>{ const c=e.target.closest?.('.kcol'); if(c){ e.preventDefault(); document.querySelectorAll('.kcol.over').forEach(x=>x!==c&&x.classList.remove('over')); c.classList.add('over'); } });
+document.addEventListener('drop',e=>{ const c=e.target.closest?.('.kcol'); if(!c) return; e.preventDefault(); const p=byId(e.dataTransfer.getData('text/plain')); if(!p) return; const st=c.dataset.statut; if(p.statut!==st){ if(st==='En séquence'&&!mainContact(p)){ toast('Ajoutez d\'abord un contact.'); render(); return; } p.statut=st; addHist(p,'Statut → '+st+' (glisser-déposer)'); if(st==='RDV fixé') crmLog('rdv.fixe',p.nom+' → opportunité créée'); save(); toast(`${p.nom} → ${st}${st==='RDV fixé'?' · opportunité créée dans le CRM':''}.`); } render(); });
+try{ const th=localStorage.getItem('pm-theme'); if(th) document.documentElement.dataset.theme=th; }catch(e){}
+ui.view = location.hash.slice(1) || 'journee';
+if(ui.view==='fiche' && !byId(ui.pid)) ui.view='prospects';
+render();
+</script>

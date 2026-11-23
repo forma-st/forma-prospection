@@ -1,0 +1,30 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Historique des formations{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Historique des formations</h1><div class="sub">Base locale en attendant la connexion au CRM. Les échéances déclenchent les relances.</div></div>
+<a class="btn sec" href="{% url 'prospection:import' %}">Importer un tableur</a></div>
+<div class="kpis">
+  <div class="kpi"><span class="l">Sessions enregistrées</span><span class="v">{{ lignes|length }}</span></div>
+  <div class="kpi"><span class="l">Échéances dépassées</span><span class="v" style="color:var(--bad)">{{ nb_retard }}</span></div>
+  <div class="kpi"><span class="l">À relancer maintenant</span><span class="v" style="color:var(--warn)">{{ nb_relancer }}</span></div>
+  <div class="kpi"><span class="l">Stagiaires SST à recycler (12 mois)</span><span class="v">{{ stagiaires_12 }}</span></div>
+</div>
+<div class="card"><div class="row between"><h2>Échéances</h2>
+  <form method="post" action="{% url 'prospection:historique_relancer' %}">{% csrf_token %}<button class="btn sm" {% if not nb_retard and not nb_relancer %}disabled{% endif %}>Créer toutes les relances dues</button></form></div>
+  <div class="tw"><table><thead><tr><th>Client</th><th>Prestation</th><th>Session</th><th>Stagiaires</th><th>Échéance</th><th>État</th><th></th></tr></thead><tbody>
+  {% for h in lignes %}<tr><td>{% if h.compte %}<a href="{% url 'prospection:compte' h.compte_id %}">{{ h.nom_client }}</a>{% else %}{{ h.nom_client }}{% endif %}<div class="small muted">{{ h.source }}{% if h.reference_planif_st %} · {{ h.reference_planif_st }}{% endif %}</div></td>
+    <td>{{ h.prestation }}</td><td>{{ h.date_session|date:"d/m/Y" }}</td><td>{{ h.nb_stagiaires }}</td>
+    <td>{{ h.echeance|date:"d/m/Y" }}<div class="small muted">{% if h.jours_restants < 0 %}dépassée{% else %}dans {{ h.jours_restants }} j{% endif %}</div></td>
+    <td>{% if h.etat == "retard" %}<span class="chip bad">en retard</span>{% elif h.etat == "relancer" %}<span class="chip warn">à relancer</span>{% else %}<span class="chip ok">à jour</span>{% endif %}{% if h.relance_creee %} <span class="chip info">relance créée</span>{% endif %}</td>
+    <td>{% if h.etat != "ok" and not h.relance_creee %}<form method="post" action="{% url 'prospection:historique_relancer' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ h.pk }}"><button class="btn sm sec">Créer la relance</button></form>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="7" class="muted">Aucune formation enregistrée. Ajoutez-en ci-dessous ou importez un tableur.</td></tr>{% endfor %}
+  </tbody></table></div>
+  <p class="small muted">Règles : {% for k, v in prestations %}{{ k }} {{ v.0 }} mois (relance J-{{ v.1 }}){% if not forloop.last %} · {% endif %}{% endfor %}.</p></div>
+<form method="post" class="card grid" style="gap:8px;max-width:720px">{% csrf_token %}<h2>Ajouter une session réalisée</h2>
+  <label class="f">Client<input type="text" name="nom_client" list="clients" required><datalist id="clients">{% for n in clients %}<option value="{{ n }}">{% endfor %}</datalist></label>
+  <div class="row"><label class="f">Prestation<select name="prestation">{% for k, v in prestations %}<option>{{ k }}</option>{% endfor %}</select></label>
+  <label class="f">Date<input type="date" name="date_session" required></label><label class="f">Stagiaires<input type="number" name="nb_stagiaires" value="8" min="1" style="width:90px"></label>
+  <label class="f">Formateur<input type="text" name="formateur"></label></div>
+  <div><button class="btn">Enregistrer</button></div>
+  <p class="small muted" style="margin:0">Les stagiaires sont des données clients : ils ne sont jamais démarchés eux-mêmes.</p></form>
+{% endblock %}

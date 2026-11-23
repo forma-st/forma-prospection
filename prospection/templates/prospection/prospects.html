@@ -1,0 +1,28 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}Prospects{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Prospects</h1><div class="sub">{{ comptes|length }} résultat{{ comptes|length|pluralize }} · triés par score</div></div>
+<div class="row"><a class="btn sec" href="{% url 'prospection:import' %}">Importer</a><a class="btn" href="{% url 'prospection:compte_nouveau' %}">Nouveau prospect</a></div></div>
+<div class="views" role="group" aria-label="Vues enregistrées">{% for k, l in vues %}<a href="?vue={{ k }}" class="{% if vue == k %}on{% endif %}">{{ l }}</a>{% endfor %}</div>
+<form class="card row" method="get">
+  <input type="hidden" name="vue" value="{{ vue }}">
+  <input type="text" name="q" placeholder="Nom, ville, NAF, SIREN, contact…" value="{{ g.q|default:'' }}" style="flex:1;min-width:180px">
+  <select name="palier"><option value="">Tous paliers</option>{% for p in "ABC" %}<option value="{{ p }}" {% if g.palier == p %}selected{% endif %}>Palier {{ p }}</option>{% endfor %}</select>
+  <select name="segment"><option value="">Tous segments</option>{% for k, l in segments %}<option value="{{ k }}" {% if g.segment == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <select name="departement"><option value="">Tous départements</option>{% for d in departements %}<option {% if g.departement == d %}selected{% endif %}>{{ d }}</option>{% endfor %}</select>
+  <select name="statut"><option value="">Tous statuts actifs</option>{% for s in statuts %}<option {% if g.statut == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+  <button class="btn sec">Filtrer</button>
+</form>
+<div class="tw"><table><thead><tr><th>Prospect</th><th class="hide-m">Segment</th><th>Score</th><th>Signal principal</th><th class="hide-m">Contact</th><th>Statut</th></tr></thead><tbody>
+{% for c in comptes %}{% with g2=c.signal_principal k=c.contact_principal %}
+<tr class="click" data-href="{% url 'prospection:compte' c.pk %}?liste=1&{{ request.GET.urlencode }}">
+  <td><a href="{% url 'prospection:compte' c.pk %}"><b>{{ c.nom }}</b></a><div class="small muted">{{ c.ville|default:"?" }}{% if c.departement %} ({{ c.departement }}){% endif %} · {{ c.effectif }} sal.{% if c.nb_etablissements > 1 %} · {{ c.nb_etablissements }} sites{% endif %}</div></td>
+  <td class="hide-m small">{{ c.segment|segment_libelle }}</td>
+  <td><div class="score"><span class="tier {{ c.palier }}">{{ c.palier }}</span><b>{{ c.score }}</b></div></td>
+  <td class="small">{% if g2 %}<b>{{ g2.type|signal_libelle }}</b><div class="muted">il y a {{ g2.age_jours }} j · {{ g2.source }}</div>{% else %}<span class="muted">—</span>{% endif %}</td>
+  <td class="hide-m small">{% if k %}{{ k.nom_complet }}<div class="muted">{{ k.fonction }}</div>{% else %}<span class="chip warn">à trouver</span>{% endif %}</td>
+  <td><span class="chip {{ c.statut|classe_statut }}">{{ c.statut }}</span></td>
+</tr>{% endwith %}
+{% empty %}<tr><td colspan="6" class="muted">Aucun prospect. <a href="{% url 'prospection:import' %}">Importez un fichier</a> ou <a href="{% url 'prospection:compte_nouveau' %}">créez-en un</a>.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

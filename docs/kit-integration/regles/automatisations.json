@@ -1,0 +1,117 @@
+{
+  "_note": "Recettes livrées (cahier §3.9). q = déclencheur, si = condition, alors = actions. n = exécutions fictives.",
+  "recettes": [
+    {
+      "id": 1,
+      "actif": true,
+      "nom": "Qualifier les nouveaux prospects A",
+      "quand": "Nouveau prospect",
+      "si": "Palier A",
+      "alors": "Enrichir, générer le brief, assigner au commercial de la zone, tâche « qualifier » sous 48 h"
+    },
+    {
+      "id": 2,
+      "actif": true,
+      "nom": "Réactivation MAC SST",
+      "quand": "Date : MAC SST dans 90 jours",
+      "si": "Compte client",
+      "alors": "Inscrire en « Réactivation MAC SST », tâche d'appel à J-60"
+    },
+    {
+      "id": 3,
+      "actif": true,
+      "nom": "Nouvel établissement BODACC",
+      "quand": "Signal « nouvel établissement »",
+      "si": "Segment cible et département prioritaire",
+      "alors": "Créer le prospect, ajouter le signal, rafraîchir SIRENE"
+    },
+    {
+      "id": 4,
+      "actif": true,
+      "nom": "Recrutement QSE détecté",
+      "quand": "Signal « recrutement QSE »",
+      "si": "Effectif ≥ 50",
+      "alors": "Tâche LinkedIn « identifier le DRH », proposer la séquence Recrutement QSE"
+    },
+    {
+      "id": 5,
+      "actif": true,
+      "nom": "Concurrent attributaire",
+      "quand": "Avis d'attribution (Veille AO)",
+      "si": "Objet formation sécurité",
+      "alors": "Ajouter l'acheteur au radar, tâche à 9 mois de l'échéance"
+    },
+    {
+      "id": 6,
+      "actif": true,
+      "nom": "Reprise « pas maintenant »",
+      "quand": "Réponse classée « pas maintenant »",
+      "si": "Date de reprise trouvée",
+      "alors": "Tâche datée, reprise de la séquence à la date"
+    },
+    {
+      "id": 7,
+      "actif": true,
+      "nom": "RDV fixé",
+      "quand": "Statut → RDV fixé",
+      "si": "—",
+      "alors": "Créer l'opportunité dans le CRM, fiche de préparation, rappel la veille"
+    },
+    {
+      "id": 8,
+      "actif": true,
+      "nom": "Reprise des opportunités perdues",
+      "quand": "Webhook CRM : opportunité perdue",
+      "si": "Motif ≠ « hors cible »",
+      "alors": "Noter le motif et le concurrent, nurturing, reprise à 11 mois"
+    },
+    {
+      "id": 9,
+      "actif": true,
+      "nom": "Passage en nurturing",
+      "quand": "Aucune interaction depuis 120 jours",
+      "si": "Non opposé",
+      "alors": "Inscrire en « Nurturing trimestriel »"
+    },
+    {
+      "id": 10,
+      "actif": true,
+      "nom": "Digest du lundi",
+      "quand": "Chaque lundi à 8 h",
+      "si": "—",
+      "alors": "E-mail : tâches de la semaine, nouveaux A, réponses en attente, RDV"
+    },
+    {
+      "id": 11,
+      "actif": true,
+      "nom": "Rafraîchissement SIRENE",
+      "quand": "Chaque nuit",
+      "si": "Prospect actif",
+      "alors": "Mettre à jour effectif, adresse, état ; retirer les entreprises fermées"
+    },
+    {
+      "id": 12,
+      "actif": true,
+      "nom": "Purge RGPD",
+      "quand": "Le 1er de chaque mois",
+      "si": "Aucun contact entrant depuis 3 ans",
+      "alors": "Préparer la liste, supprimer après validation"
+    },
+    {
+      "id": 13,
+      "actif": false,
+      "nom": "Campagne « prévention chaleur »",
+      "quand": "Le 2 mai",
+      "si": "Segments logistique et BTP",
+      "alors": "Préparer un e-mail saisonnier à valider"
+    },
+    {
+      "id": 14,
+      "actif": true,
+      "nom": "Montée en palier A",
+      "quand": "Score passe de B à A",
+      "si": "—",
+      "alors": "Notifier le responsable (e-mail et Teams)"
+    }
+  ]
+}

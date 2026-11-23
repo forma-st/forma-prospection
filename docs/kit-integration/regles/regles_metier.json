@@ -1,0 +1,393 @@
+{
+  "_note": "Règles métier de l'agent de prospection FORMA'ST (cahier des charges §3.2 à §3.4, §3.17, §3.18). Valeurs par défaut, toutes paramétrables dans l'outil. Les tarifs servent uniquement au potentiel estimé (aucun devis).",
+  "statuts": [
+    "Nouveau",
+    "À qualifier",
+    "À contacter",
+    "En séquence",
+    "A répondu",
+    "RDV fixé",
+    "Transmis au CRM",
+    "Client",
+    "Pas maintenant",
+    "Écarté",
+    "Opposé"
+  ],
+  "colonnes_vue_colonnes": [
+    "Nouveau",
+    "À qualifier",
+    "À contacter",
+    "En séquence",
+    "A répondu",
+    "RDV fixé",
+    "Transmis au CRM"
+  ],
+  "segments": {
+    "logistique": {
+      "libelle": "Logistique et transport",
+      "poids_adequation": 30,
+      "part_effectif_exposee_manutention": 0.6
+    },
+    "sante": {
+      "libelle": "Santé et médico-social",
+      "poids_adequation": 28,
+      "part_effectif_exposee_manutention": 0.5
+    },
+    "industrie": {
+      "libelle": "Industrie",
+      "poids_adequation": 28,
+      "part_effectif_exposee_manutention": 0.4
+    },
+    "commerce": {
+      "libelle": "Commerce multi-sites",
+      "poids_adequation": 26,
+      "part_effectif_exposee_manutention": 0.3
+    },
+    "collectivite": {
+      "libelle": "Collectivités et bailleurs",
+      "poids_adequation": 22,
+      "part_effectif_exposee_manutention": 0.25
+    },
+    "hotellerie": {
+      "libelle": "Hôtellerie-restauration",
+      "poids_adequation": 18,
+      "part_effectif_exposee_manutention": 0.3
+    },
+    "btp": {
+      "libelle": "BTP",
+      "poids_adequation": 18,
+      "part_effectif_exposee_manutention": 0.5
+    },
+    "prescripteur": {
+      "libelle": "Prescripteur",
+      "poids_adequation": 10,
+      "part_effectif_exposee_manutention": 0
+    }
+  },
+  "signaux": {
+    "site": {
+      "libelle": "Nouvel établissement",
+      "poids": 35,
+      "demi_vie_jours": 60
+    },
+    "qse": {
+      "libelle": "Recrutement QSE / HSE",
+      "poids": 30,
+      "demi_vie_jours": 30
+    },
+    "recrut": {
+      "libelle": "Recrutement en nombre",
+      "poids": 20,
+      "demi_vie_jours": 30
+    },
+    "dirigeant": {
+      "libelle": "Nouveau décideur",
+      "poids": 20,
+      "demi_vie_jours": 90
+    },
+    "marche": {
+      "libelle": "Marché public à renouveler",
+      "poids": 40,
+      "demi_vie_jours": 180
+    },
+    "ao": {
+      "libelle": "Acheteur public actif",
+      "poids": 15,
+      "demi_vie_jours": 120
+    },
+    "mac": {
+      "libelle": "MAC SST à échéance",
+      "poids": 50,
+      "demi_vie_jours": 90
+    },
+    "presse": {
+      "libelle": "Actualité",
+      "poids": 25,
+      "demi_vie_jours": 45
+    },
+    "web": {
+      "libelle": "Intérêt sur le site web",
+      "poids": 25,
+      "demi_vie_jours": 14
+    },
+    "ouvert": {
+      "libelle": "E-mails ouverts sans réponse",
+      "poids": 10,
+      "demi_vie_jours": 14
+    }
+  },
+  "signaux_exclusion": [
+    "procedure_collective",
+    "entreprise_fermee",
+    "opposition"
+  ],
+  "score": {
+    "poids": {
+      "adequation": 45,
+      "intention": 35,
+      "accessibilite": 20
+    },
+    "paliers": {
+      "A": 70,
+      "B": 50
+    },
+    "departements_prioritaires": [
+      "95",
+      "78",
+      "92",
+      "93",
+      "94",
+      "75",
+      "77",
+      "91",
+      "60"
+    ],
+    "adequation": {
+      "segment": "poids_adequation du segment",
+      "effectif": {
+        "50_a_1000": 30,
+        "plus_de_1000": 22,
+        "20_a_49": 18,
+        "moins_de_20": 5
+      },
+      "etablissements": {
+        "plus_de_10": 15,
+        "2_a_10": 10,
+        "1": 0
+      },
+      "zone": {
+        "departement_prioritaire": 15,
+        "autre": 5
+      },
+      "icpe": 10,
+      "erp": 5,
+      "plafond": 100
+    },
+    "intention": {
+      "formule": "min(100, round(1.6 × Σ poids_signal × 0,5^(age_jours / demi_vie_jours)))"
+    },
+    "accessibilite": {
+      "decideur_identifie": 40,
+      "prescripteur_seul": 20,
+      "email_verifie_hors_standard": 30,
+      "email_probable": 15,
+      "telephone": 15,
+      "deja_client": 15,
+      "plafond": 100
+    },
+    "total": "round((pA×adequation + pI×intention + pC×accessibilite) / (pA+pI+pC))"
+  },
+  "besoin_estime": {
+    "sst": {
+      "part_effectif_pct": 12,
+      "taille_groupe": 10,
+      "recyclage_mois": 24,
+      "references": [
+        "Recommandation INRS 10 à 15 %",
+        "Code du travail R4224-15"
+      ]
+    },
+    "evacuation": {
+      "exercices_par_site_par_an": 2,
+      "plafond_sites": 20,
+      "references": [
+        "Code du travail R4227-39"
+      ]
+    },
+    "manutention": {
+      "formule": "effectif × part_effectif_exposee_manutention du segment",
+      "taille_groupe": 10,
+      "references": [
+        "Code du travail R4541-8"
+      ]
+    },
+    "financement": {
+      "opco_finance_si_effectif_inferieur_a": 50
+    },
+    "tarifs_exemple_session_intra_eur": {
+      "sst": 1450,
+      "gestes_postures": 980,
+      "incendie_evacuation": 690
+    },
+    "_tarifs": "À remplacer par le catalogue (table Prestation de l'outil AO)."
+  },
+  "echeances_historique_formations": {
+    "SST initial": {
+      "echeance_mois": 24,
+      "relance_jours_avant": 90
+    },
+    "MAC SST": {
+      "echeance_mois": 24,
+      "relance_jours_avant": 90
+    },
+    "Exercice d'évacuation": {
+      "echeance_mois": 6,
+      "relance_jours_avant": 30
+    },
+    "Manipulation des extincteurs": {
+      "echeance_mois": 12,
+      "relance_jours_avant": 45
+    },
+    "Gestes et postures": {
+      "echeance_mois": 24,
+      "relance_jours_avant": 60
+    }
+  },
+  "colonnes_ia_prereglees": {
+    "angle": {
+      "libelle": "Angle d'approche",
+      "source": "signaux, segment, besoin estimé"
+    },
+    "decideur": {
+      "libelle": "Décideur à viser",
+      "source": "segment, effectif"
+    },
+    "risque": {
+      "libelle": "Risque incendie",
+      "source": "Géorisques, SIRENE"
+    },
+    "multisite": {
+      "libelle": "Plusieurs sites à former ?",
+      "source": "SIRENE (établissements)"
+    },
+    "presta": {
+      "libelle": "Prestataire actuel",
+      "source": "historique, DECP"
+    },
+    "finance": {
+      "libelle": "Financement",
+      "source": "IDCC, effectif"
+    }
+  },
+  "pilote_automatique": {
+    "activites": [
+      {
+        "cle": "recherche",
+        "libelle": "Trouver et créer des prospects",
+        "description": "Lit BODACC, SIRENE, offres d'emploi, veille AO ; crée les fiches et les signaux",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "enrich",
+        "libelle": "Enrichir les contacts",
+        "description": "Recherche d'e-mails vérifiés, dans la limite du budget",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "redac",
+        "libelle": "Rédiger les premiers messages",
+        "description": "Brouillons personnalisés sur le signal et le besoin estimé",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "reactiv",
+        "libelle": "Envoyer les relances aux clients",
+        "description": "Recyclages MAC SST, exercices semestriels (clients connus)",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "prospect",
+        "libelle": "Envoyer les séquences de prospection",
+        "description": "Nouveaux contacts ; l'automatique exige un modèle validé",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "linkedin",
+        "libelle": "Agir sur LinkedIn",
+        "description": "Toujours manuel : l'agent prépare le texte, vous l'envoyez",
+        "toujoursManuel": true
+      },
+      {
+        "cle": "tri",
+        "libelle": "Trier les réponses",
+        "description": "Classement, arrêt des séquences, oppositions, absences",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "rdv",
+        "libelle": "Proposer des rendez-vous",
+        "description": "Créneaux libres de l'agenda Microsoft 365 envoyés aux prospects intéressés",
+        "toujoursManuel": false
+      },
+      {
+        "cle": "crm",
+        "libelle": "Mettre à jour le CRM",
+        "description": "Comptes, contacts, activités et opportunités au RDV fixé",
+        "toujoursManuel": false
+      }
+    ],
+    "niveaux_possibles": [
+      "manuel",
+      "proposer",
+      "auto"
+    ],
+    "reglages_par_defaut": {
+      "recherche": "auto",
+      "enrich": "auto",
+      "redac": "proposer",
+      "reactiv": "auto",
+      "prospect": "proposer",
+      "linkedin": "manuel",
+      "tri": "auto",
+      "rdv": "proposer",
+      "crm": "auto"
+    },
+    "budget_mensuel_eur": 40,
+    "envois_automatiques_max_par_jour": 30,
+    "au_dela_du_budget": "repasser en proposer"
+  },
+  "envoi": {
+    "plafond_initial_par_boite_jour": 40,
+    "montee_par_semaine": 5,
+    "plages": [
+      "08:30-11:30",
+      "14:00-17:00"
+    ],
+    "jours": "ouvrés",
+    "fuseau": "Europe/Paris",
+    "espacement_minutes": [
+      2,
+      6
+    ],
+    "arret_boite": {
+      "taux_rebond_pct": 3,
+      "taux_plainte_pct": 0.1
+    },
+    "suivi_ouverture_pixel": false
+  },
+  "controle_avant_envoi": {
+    "email": {
+      "mots_min": 60,
+      "mots_max": 170,
+      "questions": 1,
+      "personnalisation": "nom de l'entreprise ou du contact",
+      "accroche_signal": true,
+      "mots_interdits": [
+        "gratuit",
+        "urgent",
+        "promo",
+        "exceptionnel",
+        "garanti",
+        "!!"
+      ],
+      "lien_opposition": true,
+      "champs_entre_crochets": 0
+    },
+    "linkedin": {
+      "caracteres_max": 300,
+      "lien_interdit": true
+    },
+    "seuil_envoi_automatique": 60
+  },
+  "rgpd": {
+    "base_legale": "intérêt légitime (B2B)",
+    "conservation_annees_apres_dernier_contact_entrant": 3,
+    "opposition": "globale, tous canaux, immédiate, synchronisée avec le CRM",
+    "synchro_opposition_max_minutes": 60,
+    "linkedin": "manuel uniquement"
+  },
+  "proximite_session": {
+    "rayon_km": 25,
+    "source_sessions": "Planif ST (lecture seule, optionnelle)"
+  }
+}

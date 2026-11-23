@@ -1,0 +1,949 @@
+{
+  "_avertissement": "Données entièrement fictives (domaines .example). Ne pas utiliser en production.",
+  "prospects": [
+    {
+      "id": 1,
+      "nom": "Logistique du Vexin",
+      "ville": "Cergy",
+      "dep": "95",
+      "seg": "logistique",
+      "naf": "52.10B",
+      "eff": 240,
+      "sites": 2,
+      "icpe": true,
+      "erp": false,
+      "opco": "OPCO Mobilités",
+      "statut": "À contacter",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "qse",
+          "d": 6,
+          "txt": "Offre d'emploi « Responsable HSE (CDI) » publiée",
+          "src": "France Travail"
+        },
+        {
+          "t": "site",
+          "d": 25,
+          "txt": "Nouvel établissement immatriculé à Saint-Ouen-l'Aumône",
+          "src": "BODACC"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Claire Vasseur",
+          "f": "Directrice des ressources humaines",
+          "role": "decideur",
+          "email": "c.vasseur@logistique-vexin.example",
+          "es": "verifie",
+          "tel": ""
+        },
+        {
+          "n": "Standard",
+          "f": "Accueil",
+          "role": "standard",
+          "email": "contact@logistique-vexin.example",
+          "es": "verifie",
+          "tel": "01 30 00 00 01"
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "912 345 671"
+    },
+    {
+      "id": 2,
+      "nom": "Clinique des Hauts-Prés",
+      "ville": "Eaubonne",
+      "dep": "95",
+      "seg": "sante",
+      "naf": "86.10Z",
+      "eff": 310,
+      "sites": 1,
+      "icpe": false,
+      "erp": true,
+      "opco": "OPCO Santé",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "dirigeant",
+          "d": 40,
+          "txt": "Nomination d'une nouvelle directrice des soins",
+          "src": "Presse locale"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Sophie Lemaire",
+          "f": "Directrice des ressources humaines",
+          "role": "decideur",
+          "email": "s.lemaire@cliniquehp.example",
+          "es": "probable",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "913 456 782"
+    },
+    {
+      "id": 3,
+      "nom": "Maison & Jardin Ouest",
+      "ville": "Nantes",
+      "dep": "44",
+      "seg": "commerce",
+      "naf": "47.52B",
+      "eff": 820,
+      "sites": 46,
+      "icpe": false,
+      "erp": true,
+      "opco": "OPCO Commerce",
+      "statut": "À contacter",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "presse",
+          "d": 12,
+          "txt": "Annonce de 8 ouvertures de magasins en 2027",
+          "src": "Communiqué de presse"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Thomas Garnier",
+          "f": "Responsable sécurité et prévention",
+          "role": "decideur",
+          "email": "t.garnier@mjo.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "914 567 893"
+    },
+    {
+      "id": 4,
+      "nom": "Métallerie Durand & Fils",
+      "ville": "Beauvais",
+      "dep": "60",
+      "seg": "industrie",
+      "naf": "25.11Z",
+      "eff": 95,
+      "sites": 1,
+      "icpe": true,
+      "erp": false,
+      "opco": "OPCO 2i",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "recrut",
+          "d": 9,
+          "txt": "14 offres d'emploi ouvertes (soudeurs, opérateurs)",
+          "src": "France Travail"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Pascal Durand",
+          "f": "Gérant",
+          "role": "decideur",
+          "email": "",
+          "es": "absent",
+          "tel": "03 44 00 00 04"
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "915 678 904"
+    },
+    {
+      "id": 5,
+      "nom": "Syndicat intercommunal Val-Nord Services",
+      "ville": "Sarcelles",
+      "dep": "95",
+      "seg": "collectivite",
+      "naf": "84.11Z",
+      "eff": 420,
+      "sites": 12,
+      "icpe": false,
+      "erp": true,
+      "opco": "CNFPT",
+      "statut": "À contacter",
+      "owner": "S. Diallo",
+      "signaux": [
+        {
+          "t": "marche",
+          "d": 120,
+          "txt": "Marché de formation sécurité attribué en 2023 pour 3 ans : échéance estimée mars 2027",
+          "src": "DECP"
+        },
+        {
+          "t": "ao",
+          "d": 60,
+          "txt": "Avis « maintenance des extincteurs » écarté par la veille : acheteur actif en sécurité",
+          "src": "Veille AO"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Nadia Benali",
+          "f": "Responsable formation",
+          "role": "decideur",
+          "email": "n.benali@valnord.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Veille AO (attributions)",
+      "siren": "200 012 345"
+    },
+    {
+      "id": 6,
+      "nom": "Les Berges Hôtels",
+      "ville": "Paris",
+      "dep": "75",
+      "seg": "hotellerie",
+      "naf": "55.10Z",
+      "eff": 160,
+      "sites": 6,
+      "icpe": false,
+      "erp": true,
+      "opco": "Akto",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "recrut",
+          "d": 15,
+          "txt": "11 postes ouverts (réception, étages, nuit)",
+          "src": "France Travail"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Julien Petit",
+          "f": "Directeur des opérations",
+          "role": "decideur",
+          "email": "j.petit@bergeshotels.example",
+          "es": "probable",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "916 789 015"
+    },
+    {
+      "id": 7,
+      "nom": "Conserverie du Valois",
+      "ville": "Crépy-en-Valois",
+      "dep": "60",
+      "seg": "industrie",
+      "naf": "10.39A",
+      "eff": 180,
+      "sites": 1,
+      "icpe": true,
+      "erp": false,
+      "opco": "OCAPIAT",
+      "statut": "À contacter",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "site",
+          "d": 40,
+          "txt": "Création d'un second site de production (BODACC)",
+          "src": "BODACC"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Isabelle Roux",
+          "f": "Responsable QHSE",
+          "role": "decideur",
+          "email": "i.roux@conserverie-valois.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "917 890 126"
+    },
+    {
+      "id": 8,
+      "nom": "Transports Lefèvre Express",
+      "ville": "Gonesse",
+      "dep": "95",
+      "seg": "logistique",
+      "naf": "49.41A",
+      "eff": 130,
+      "sites": 3,
+      "icpe": false,
+      "erp": false,
+      "opco": "OPCO Mobilités",
+      "statut": "Nouveau",
+      "owner": "",
+      "signaux": [],
+      "contacts": [],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "918 901 237"
+    },
+    {
+      "id": 9,
+      "nom": "Résidences Les Glycines",
+      "ville": "Argenteuil",
+      "dep": "95",
+      "seg": "sante",
+      "naf": "87.10A",
+      "eff": 210,
+      "sites": 4,
+      "icpe": false,
+      "erp": true,
+      "opco": "OPCO Santé",
+      "statut": "À contacter",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "web",
+          "d": 4,
+          "txt": "Guide « Évacuation des établissements de soins » téléchargé (formulaire, consentement)",
+          "src": "Site FORMA'ST"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Hélène Marchand",
+          "f": "Directrice",
+          "role": "decideur",
+          "email": "h.marchand@glycines.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "919 012 348"
+    },
+    {
+      "id": 10,
+      "nom": "Rénov'Habitat Île-de-France",
+      "ville": "Créteil",
+      "dep": "94",
+      "seg": "btp",
+      "naf": "43.39Z",
+      "eff": 75,
+      "sites": 1,
+      "icpe": false,
+      "erp": false,
+      "opco": "Constructys",
+      "statut": "À contacter",
+      "owner": "S. Diallo",
+      "signaux": [
+        {
+          "t": "dirigeant",
+          "d": 70,
+          "txt": "Changement de gérant publié",
+          "src": "BODACC"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Yannick Moreau",
+          "f": "Conducteur de travaux principal",
+          "role": "prescripteur",
+          "email": "y.moreau@renovhabitat.example",
+          "es": "probable",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "920 123 459"
+    },
+    {
+      "id": 11,
+      "nom": "Boulangeries Marceau",
+      "ville": "Versailles",
+      "dep": "78",
+      "seg": "commerce",
+      "naf": "10.71C",
+      "eff": 190,
+      "sites": 22,
+      "icpe": false,
+      "erp": true,
+      "opco": "OPCO EP",
+      "statut": "Client",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "mac",
+          "d": 0,
+          "txt": "MAC SST de 12 salariés à prévoir avant le 20/01/2027 (formés le 20/01/2025)",
+          "src": "Historique des formations"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Aurélie Fontaine",
+          "f": "Responsable RH",
+          "role": "decideur",
+          "email": "a.fontaine@marceau.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": true,
+      "src": "CRM (client)",
+      "siren": "921 234 560"
+    },
+    {
+      "id": 12,
+      "nom": "Garage Central Nord",
+      "ville": "Saint-Denis",
+      "dep": "93",
+      "seg": "industrie",
+      "naf": "45.20A",
+      "eff": 45,
+      "sites": 1,
+      "icpe": false,
+      "erp": false,
+      "opco": "OPCO Mobilités",
+      "statut": "Client",
+      "owner": "S. Diallo",
+      "signaux": [
+        {
+          "t": "mac",
+          "d": 0,
+          "txt": "MAC SST de 4 salariés à prévoir avant le 15/03/2027",
+          "src": "Historique des formations"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Franck Leroy",
+          "f": "Gérant",
+          "role": "decideur",
+          "email": "f.leroy@garagecentralnord.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": true,
+      "src": "CRM (client)",
+      "siren": "922 345 671"
+    },
+    {
+      "id": 13,
+      "nom": "Distrinord",
+      "ville": "Roissy-en-France",
+      "dep": "95",
+      "seg": "logistique",
+      "naf": "52.29B",
+      "eff": 560,
+      "sites": 1,
+      "icpe": true,
+      "erp": false,
+      "opco": "OPCO Mobilités",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "site",
+          "d": 70,
+          "txt": "Extension de 20 000 m² inaugurée",
+          "src": "Presse économique"
+        },
+        {
+          "t": "ouvert",
+          "d": 3,
+          "txt": "Dernier e-mail ouvert 4 fois, sans réponse",
+          "src": "Séquence"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Laurent Girard",
+          "f": "Directeur de site",
+          "role": "decideur",
+          "email": "l.girard@distrinord.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "923 456 782"
+    },
+    {
+      "id": 14,
+      "nom": "Val-Seine Habitat",
+      "ville": "Nanterre",
+      "dep": "92",
+      "seg": "collectivite",
+      "naf": "68.20A",
+      "eff": 350,
+      "sites": 8,
+      "icpe": false,
+      "erp": true,
+      "opco": "Uniformation",
+      "statut": "À contacter",
+      "owner": "S. Diallo",
+      "signaux": [
+        {
+          "t": "ao",
+          "d": 30,
+          "txt": "Avis « maintenance incendie » écarté par la veille : acheteur actif en sécurité",
+          "src": "Veille AO"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Service achats",
+          "f": "Achats",
+          "role": "standard",
+          "email": "achats@valseinehabitat.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Veille AO",
+      "siren": "924 567 893"
+    },
+    {
+      "id": 15,
+      "nom": "Laboratoires Hélia",
+      "ville": "Chartres",
+      "dep": "28",
+      "seg": "industrie",
+      "naf": "20.42Z",
+      "eff": 270,
+      "sites": 1,
+      "icpe": true,
+      "erp": false,
+      "opco": "OPCO 2i",
+      "statut": "À qualifier",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "qse",
+          "d": 20,
+          "txt": "Offre d'emploi « Animateur QSE »",
+          "src": "France Travail"
+        }
+      ],
+      "contacts": [],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "925 678 904"
+    },
+    {
+      "id": 16,
+      "nom": "Le Comptoir Gourmand",
+      "ville": "Lille",
+      "dep": "59",
+      "seg": "hotellerie",
+      "naf": "56.10A",
+      "eff": 230,
+      "sites": 14,
+      "icpe": false,
+      "erp": true,
+      "opco": "Akto",
+      "statut": "Opposé",
+      "owner": "J. Morel",
+      "signaux": [],
+      "contacts": [
+        {
+          "n": "Romain Lefort",
+          "f": "Responsable réseau",
+          "role": "decideur",
+          "email": "r.lefort@comptoirgourmand.example",
+          "es": "bloque",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "926 789 015"
+    },
+    {
+      "id": 17,
+      "nom": "Audit & Conseil Vexin",
+      "ville": "Pontoise",
+      "dep": "95",
+      "seg": "prescripteur",
+      "naf": "69.20Z",
+      "eff": 25,
+      "sites": 1,
+      "icpe": false,
+      "erp": false,
+      "opco": "Atlas",
+      "statut": "Nouveau",
+      "owner": "J. Morel",
+      "signaux": [],
+      "contacts": [
+        {
+          "n": "Valérie Brun",
+          "f": "Associée, expert-comptable",
+          "role": "prescripteur",
+          "email": "v.brun@acvexin.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Salon Préventica 2026",
+      "siren": "927 890 126"
+    },
+    {
+      "id": 18,
+      "nom": "Graphic Seine",
+      "ville": "Rouen",
+      "dep": "76",
+      "seg": "industrie",
+      "naf": "18.12Z",
+      "eff": 60,
+      "sites": 1,
+      "icpe": false,
+      "erp": false,
+      "opco": "OPCO 2i",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [],
+      "contacts": [
+        {
+          "n": "Cédric Lambert",
+          "f": "Directeur administratif",
+          "role": "decideur",
+          "email": "c.lambert@graphicseine.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "928 901 237"
+    },
+    {
+      "id": 19,
+      "nom": "Centre aquatique des Dauphins",
+      "ville": "Meaux",
+      "dep": "77",
+      "seg": "collectivite",
+      "naf": "93.11Z",
+      "eff": 55,
+      "sites": 1,
+      "icpe": false,
+      "erp": true,
+      "opco": "Uniformation",
+      "statut": "À contacter",
+      "owner": "S. Diallo",
+      "signaux": [
+        {
+          "t": "recrut",
+          "d": 10,
+          "txt": "Recrutement de 6 maîtres-nageurs saisonniers",
+          "src": "France Travail"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Émilie Garcia",
+          "f": "Directrice",
+          "role": "decideur",
+          "email": "e.garcia@dauphins.example",
+          "es": "probable",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "929 012 348"
+    },
+    {
+      "id": 20,
+      "nom": "Entrepôts Frigorifiques Seine-Est",
+      "ville": "Rungis",
+      "dep": "94",
+      "seg": "logistique",
+      "naf": "52.10A",
+      "eff": 140,
+      "sites": 1,
+      "icpe": true,
+      "erp": false,
+      "opco": "OPCO Mobilités",
+      "statut": "En séquence",
+      "owner": "J. Morel",
+      "signaux": [
+        {
+          "t": "presse",
+          "d": 30,
+          "txt": "Rachat par un groupe logistique européen",
+          "src": "Presse économique"
+        }
+      ],
+      "contacts": [
+        {
+          "n": "Didier Masson",
+          "f": "Responsable maintenance et sécurité",
+          "role": "decideur",
+          "email": "d.masson@efse.example",
+          "es": "verifie",
+          "tel": ""
+        }
+      ],
+      "hist": [],
+      "client": false,
+      "src": "Fichier CCI 2026",
+      "siren": "930 123 459"
+    }
+  ],
+  "reponses": [
+    {
+      "id": 1,
+      "pid": 20,
+      "de": "Didier Masson",
+      "d": 0,
+      "obj": "RE: Formation de vos caristes après le rachat",
+      "txt": "Bonjour,\n\nOui, ça peut nous intéresser : nous allons intégrer une trentaine de caristes au printemps et il faudra les former (gestes et postures, SST). Pouvez-vous m'appeler jeudi après-midi ?\n\nCordialement,\nD. Masson",
+      "cl": "Intéressé",
+      "conf": 96,
+      "info": "Demande un appel jeudi après-midi ; ~30 caristes au printemps",
+      "done": false
+    },
+    {
+      "id": 2,
+      "pid": 2,
+      "de": "Sophie Lemaire",
+      "d": 1,
+      "obj": "RE: Évacuation et nouvelle direction des soins",
+      "txt": "Bonjour,\n\nCe sujet est suivi par notre responsable sécurité, M. Arnaud Perrin (a.perrin@cliniquehp.example). Je lui transmets votre message.\n\nBien à vous,\nS. Lemaire",
+      "cl": "Mauvais interlocuteur",
+      "conf": 93,
+      "info": "Nouveau contact : Arnaud Perrin, responsable sécurité",
+      "nc": {
+        "n": "Arnaud Perrin",
+        "f": "Responsable sécurité",
+        "email": "a.perrin@cliniquehp.example"
+      },
+      "done": false
+    },
+    {
+      "id": 3,
+      "pid": 18,
+      "de": "Cédric Lambert",
+      "d": 1,
+      "obj": "RE: Plan de formation 2027",
+      "txt": "Bonjour,\n\nPas pour le moment, nous bouclons le plan de formation. Revenez vers moi début mars.\n\nC. Lambert",
+      "cl": "Pas maintenant",
+      "conf": 91,
+      "info": "Date de reprise : 02/03/2027",
+      "reprise": "2027-03-02",
+      "done": false
+    },
+    {
+      "id": 4,
+      "pid": 6,
+      "de": "Julien Petit",
+      "d": 2,
+      "obj": "Réponse automatique : absent",
+      "txt": "Je suis absent jusqu'au 25 novembre inclus. Pour toute urgence, contactez la réception.",
+      "cl": "Absence",
+      "conf": 99,
+      "info": "Pause de la séquence jusqu'au 26/11/2026",
+      "done": false
+    },
+    {
+      "id": 5,
+      "pid": 4,
+      "de": "Pascal Durand",
+      "d": 3,
+      "obj": "RE: Vos nouveaux opérateurs",
+      "txt": "Bonjour, nous travaillons déjà avec un organisme pour le SST. Merci.",
+      "cl": "Déjà équipé",
+      "conf": 88,
+      "info": "Prestataire en place ; reprise proposée à 11 mois",
+      "done": false
+    },
+    {
+      "id": 6,
+      "pid": 16,
+      "de": "Romain Lefort",
+      "d": 6,
+      "obj": "RE: Formation de vos équipes",
+      "txt": "Merci de ne plus m'écrire.",
+      "cl": "Opposition",
+      "conf": 99,
+      "info": "Opposition enregistrée sur l'adresse et le domaine",
+      "done": true
+    }
+  ],
+  "taches": [
+    {
+      "id": 1,
+      "t": "appel",
+      "pid": 20,
+      "titre": "Appeler Didier Masson (demande jeudi après-midi)",
+      "ech": 2,
+      "fait": false
+    },
+    {
+      "id": 2,
+      "t": "linkedin",
+      "pid": 1,
+      "titre": "Inviter Claire Vasseur (DRH) sur LinkedIn",
+      "ech": 0,
+      "fait": false,
+      "txt": ""
+    },
+    {
+      "id": 3,
+      "t": "appel",
+      "pid": 11,
+      "titre": "Appeler Aurélie Fontaine : MAC SST de 12 salariés avant le 20/01",
+      "ech": 0,
+      "fait": false
+    },
+    {
+      "id": 4,
+      "t": "qualifier",
+      "pid": 15,
+      "titre": "Trouver le décideur (QSE ou RH) chez Laboratoires Hélia",
+      "ech": 0,
+      "fait": false
+    },
+    {
+      "id": 5,
+      "t": "appel",
+      "pid": 13,
+      "titre": "Appeler Laurent Girard (e-mail ouvert 4 fois)",
+      "ech": 0,
+      "fait": false
+    },
+    {
+      "id": 6,
+      "t": "linkedin",
+      "pid": 3,
+      "titre": "Message LinkedIn à Thomas Garnier (8 ouvertures en 2027)",
+      "ech": 1,
+      "fait": false
+    },
+    {
+      "id": 7,
+      "t": "email",
+      "pid": 5,
+      "titre": "Valider le 1er e-mail « Acheteur public avant marché »",
+      "ech": 0,
+      "fait": false
+    },
+    {
+      "id": 8,
+      "t": "appel",
+      "pid": 9,
+      "titre": "Appeler Hélène Marchand (guide téléchargé)",
+      "ech": -1,
+      "fait": false
+    }
+  ],
+  "historique_formations": [
+    {
+      "id": 1,
+      "nom": "Boulangeries Marceau",
+      "pid": 11,
+      "prest": "MAC SST",
+      "date": "2025-01-20",
+      "n": 12,
+      "formateur": "Formateur A",
+      "src": "Import tableur"
+    },
+    {
+      "id": 2,
+      "nom": "Garage Central Nord",
+      "pid": 12,
+      "prest": "SST initial",
+      "date": "2025-03-15",
+      "n": 4,
+      "formateur": "Formateur B",
+      "src": "Import tableur"
+    },
+    {
+      "id": 3,
+      "nom": "Boulangeries Marceau",
+      "pid": 11,
+      "prest": "Exercice d'évacuation",
+      "date": "2026-06-10",
+      "n": 22,
+      "formateur": "Formateur A",
+      "src": "Saisie"
+    },
+    {
+      "id": 4,
+      "nom": "Boulangeries Marceau",
+      "pid": 11,
+      "prest": "Manipulation des extincteurs",
+      "date": "2025-12-01",
+      "n": 30,
+      "formateur": "Formateur B",
+      "src": "Saisie"
+    },
+    {
+      "id": 5,
+      "nom": "Garage Central Nord",
+      "pid": 12,
+      "prest": "Exercice d'évacuation",
+      "date": "2026-04-02",
+      "n": 1,
+      "formateur": "Formateur B",
+      "src": "Saisie"
+    },
+    {
+      "id": 6,
+      "nom": "Groupe Sanitaire Ouest",
+      "pid": 0,
+      "prest": "Gestes et postures",
+      "date": "2025-02-03",
+      "n": 24,
+      "formateur": "Formateur A",
+      "src": "Import tableur"
+    },
+    {
+      "id": 7,
+      "nom": "Groupe Sanitaire Ouest",
+      "pid": 0,
+      "prest": "MAC SST",
+      "date": "2025-05-12",
+      "n": 9,
+      "formateur": "Formateur A",
+      "src": "Import tableur"
+    }
+  ],
+  "oppositions": [
+    "r.lefort@comptoirgourmand.example",
+    "@concurrent-formation.example",
+    "m.dupuis@exemple-btp.example"
+  ]
+}

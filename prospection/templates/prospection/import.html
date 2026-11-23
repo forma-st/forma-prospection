@@ -1,0 +1,26 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Import de fichiers{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Import de fichiers</h1><div class="sub">Fichiers clients, CCI, salons, exports d'autres outils, historique des formations</div></div></div>
+<div class="grid g2">
+  <form class="card grid" style="gap:12px" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <h2>Déposer un fichier</h2>
+    <label class="f">Type de fichier<select name="type"><option value="prospects">Prospects (entreprises et contacts)</option><option value="historique">Historique des formations réalisées</option></select></label>
+    <label class="f">Fichier CSV (séparateur « ; » ou « , ») ou Excel (.xlsx)<input type="file" name="fichier" accept=".csv,.txt,.xlsx" required></label>
+    <p class="small muted" style="margin:0">Étape suivante : vérification des colonnes et contrôle de chaque ligne (doublons, SIRET, opposition, e-mails personnels). Rien n'est enregistré avant votre validation.</p>
+    <div><button class="btn">Analyser le fichier</button></div>
+  </form>
+  <div class="grid" style="gap:16px;align-content:start">
+    <div class="card"><h2>Connexion à FORM'AO</h2>
+      {% if formao_configuree %}<p class="small" style="margin-top:0">Reprenez de FORM'AO les acheteurs publics qui ont publié des avis retenus par la veille : un prospect par acheteur, un signal « acheteur public actif » par avis.</p>
+      <div class="row"><form method="post" action="{% url 'prospection:acheteurs_ao' %}">{% csrf_token %}<button class="btn sec">Importer les acheteurs publics</button></form>
+      {% if user.is_staff %}<form method="post" action="{% url 'prospection:formao_synchroniser' %}">{% csrf_token %}<button class="btn sm ghost">Reprendre le profil et le catalogue</button></form>{% endif %}</div>
+      {% else %}<p class="small muted" style="margin:0">Facultatif. Les deux outils sont indépendants ; pour relier la Prospection à FORM'AO, renseignez <code>FORMAO_URL</code> et <code>FORMAO_JETON</code> dans le fichier <code>.env</code> (voir <code>docs/API_FORMAO.md</code>).</p>{% endif %}</div>
+    <div class="card"><h2>Imports récents</h2><div class="list">
+      {% for i in imports_recents %}<div class="li"><div class="grow small"><a href="{% url 'prospection:import_detail' i.pk %}"><b>{{ i.nom_fichier }}</b></a> · {{ i.get_type_display }} · {{ i.cree_le|date:"d/m/Y H:i" }}<br>
+        <span class="muted">{% if i.annule_le %}annulé{% elif i.applique_le %}{{ i.rapport.crees|default:0 }} créés{% if i.rapport.completes %}, {{ i.rapport.completes }} complétés{% endif %}{% else %}non validé{% endif %}</span></div>
+        {% if i.annulable and i.type == "prospects" %}<form method="post" action="{% url 'prospection:import_annuler' i.pk %}" onsubmit="return confirm('Supprimer les prospects créés par cet import ?')">{% csrf_token %}<button class="btn sm ghost">Annuler l'import</button></form>{% endif %}</div>
+      {% empty %}<p class="small muted">Aucun import.</p>{% endfor %}</div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "prospection/base.html" %}
+{% block titre %}Tâches{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><h1>Tâches</h1><div class="sub">Créées depuis les fiches, l'historique des formations et après chaque envoi</div></div></div>
+<div class="views"><a href="?" class="{% if not type %}on{% endif %}">Toutes</a>{% for k, l in types %}<a href="?type={{ k }}" class="{% if type == k %}on{% endif %}">{{ l }}</a>{% endfor %}</div>
+<div class="card"><div class="list">
+{% for t in taches %}<div class="li" style="{% if t.faite_le %}opacity:.55{% endif %}">
+  <form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ t.pk }}"><button class="btn sm ghost" name="quoi" value="fait" title="{% if t.faite_le %}Rouvrir{% else %}Marquer comme faite{% endif %}">{% if t.faite_le %}↺{% else %}✓{% endif %}</button></form>
+  <div class="grow"><div class="row"><span class="chip">{{ t.get_type_display }}</span><b style="{% if t.faite_le %}text-decoration:line-through{% endif %}">{{ t.titre }}</b></div>
+    <div class="small muted">{% if t.compte %}<a href="{% url 'prospection:compte' t.compte_id %}?canal={% if t.type == 'appel' %}appel{% elif t.type == 'linkedin' %}linkedin{% else %}email{% endif %}">{{ t.compte.nom }}</a> · {% endif %}{% if t.faite_le %}faite{% elif t.retard > 0 %}<span style="color:var(--bad)">en retard de {{ t.retard }} j</span>{% elif t.retard == 0 %}aujourd'hui{% else %}le {{ t.echeance|date:"d/m/Y" }}{% endif %}{% if t.origine %} · {{ t.origine }}{% endif %}</div></div>
+  {% if not t.faite_le %}<form method="post" class="row">{% csrf_token %}<input type="hidden" name="id" value="{{ t.pk }}"><input type="hidden" name="quoi" value="reporter"><select name="jours" aria-label="Reporter de"><option value="1">demain</option><option value="7">+7 j</option><option value="30">+30 j</option></select><button class="btn sm ghost">Reporter</button></form>{% endif %}
+</div>{% empty %}<p class="muted">Aucune tâche.</p>{% endfor %}
+</div></div>
+{% endblock %}

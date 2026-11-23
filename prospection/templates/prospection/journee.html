@@ -1,0 +1,28 @@
+{% extends "prospection/base.html" %}{% load prospection_tags %}
+{% block titre %}Ma journée{% endblock %}
+{% block contenu %}
+<div class="top"><div class="t"><div class="sub">{% now "l j F Y" %}</div><h1>Bonjour {{ user.first_name|default:user.username }}, {{ total }} action{{ total|pluralize }} vous attend{{ total|pluralize:"ent" }}</h1></div>
+<div class="row"><a class="btn sec" href="{% url 'prospection:import' %}">Importer</a><a class="btn" href="{% url 'prospection:compte_nouveau' %}">Nouveau prospect</a></div></div>
+<div class="grid g2">
+  <div class="card"><div class="row between"><h2>Prochaines actions</h2><span class="small muted">réponses chaudes, retards, échéances clients, prospects A</span></div>
+    {% for a in actions %}
+    <div class="nba"><span class="ico {% if a.chaud %}hot{% endif %}">{% if a.icone == 'appel' %}☎{% elif a.icone == 'linkedin' %}in{% elif a.icone == 'email' %}✉{% elif a.icone == 'clock' %}⏱{% elif a.icone == 'spark' %}✦{% else %}✓{% endif %}</span>
+      <div style="min-width:0"><b>{{ a.titre }}</b>{% if a.sous_titre %} <span class="small muted">· {{ a.sous_titre }}</span>{% endif %}<div class="why">{{ a.raison }}</div></div>
+      <div class="acts">
+        {% if a.historique_id %}<form method="post" action="{% url 'prospection:historique_relancer' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ a.historique_id }}"><input type="hidden" name="cle" value="{{ a.cle }}"><input type="hidden" name="retour" value="{% url 'prospection:journee' %}"><button class="btn sm">{{ a.bouton }}</button></form>
+        {% else %}<a class="btn sm" href="{{ a.url }}">{{ a.bouton }}</a>{% endif %}
+        {% if a.tache_id %}<form method="post" action="{% url 'prospection:journee_action' %}">{% csrf_token %}<input type="hidden" name="cle" value="{{ a.cle }}"><button class="btn sm ghost" name="quoi" value="fait">Fait</button></form>{% endif %}
+        <form method="post" action="{% url 'prospection:journee_action' %}">{% csrf_token %}<input type="hidden" name="cle" value="{{ a.cle }}"><button class="btn sm ghost" name="quoi" value="demain" title="Reporter à demain">Demain</button></form>
+      </div></div>
+    {% empty %}<p class="muted">Tout est à jour. Importez un fichier ou ajoutez des signaux pour alimenter la liste.</p>{% endfor %}
+    {% if reste %}<p class="small muted">{{ reste }} autres actions dans <a href="{% url 'prospection:taches' %}">Tâches</a>.</p>{% endif %}
+  </div>
+  <div class="grid" style="gap:16px;align-content:start">
+    <div class="card"><div class="row between"><h2>Objectif du jour</h2><b>{{ faites }} / {{ objectif }}</b></div><div class="prog" style="margin-top:8px"><i style="width:{{ pct }}%"></i></div>
+      <p class="small muted" style="margin:8px 0 0">{{ nb_actifs }} prospects actifs, dont {{ nb_a }} en palier A.</p></div>
+    <div class="card"><h2>Signaux récents</h2><div class="list">
+      {% for s in signaux %}<div class="li"><span class="dot info"></span><div class="grow small"><a href="{% url 'prospection:compte' s.compte_id %}"><b>{{ s.compte.nom }}</b></a> · {{ s.type|signal_libelle }}<br><span class="muted">{{ s.texte }} · {{ s.source }} · {{ s.date_signal|date:"d/m/Y" }}</span></div><span class="tier {{ s.compte.palier }}">{{ s.compte.palier }}</span></div>
+      {% empty %}<p class="small muted">Aucun signal pour l'instant. Ajoutez-en depuis une fiche, ou importez un fichier.</p>{% endfor %}</div></div>
+  </div>
+</div>
+{% endblock %}
