@@ -7,7 +7,9 @@ minimum. Les nouveaux prospects arrivent « À qualifier » : rien n'est contact
 Sources :
 - sirene     : API Recherche d'entreprises (DINUM) — entreprises correspondant à la cible (NAF, départements, effectif) ;
 - bodacc     : annonces BODACC de création d'établissement — signal « nouvel établissement » ;
-- georisques : installations classées (ICPE) — sites industriels à fort besoin incendie / évacuation.
+- georisques : installations classées (ICPE) — sites industriels à fort besoin incendie / évacuation ;
+- francetravail : offres d'emploi (recrutements QSE ou en nombre) ;
+- labonneboite : entreprises à fort potentiel d'embauche dans les 6 mois (France Travail), par métier ROME et par département.
 
 Les réponses de BODACC et de Géorisques sont lues de façon tolérante (plusieurs noms de champs possibles) :
 une source qui change de format est signalée dans le journal, sans bloquer les autres.
@@ -341,7 +343,87 @@ def chercher_francetravail(r: RechercheAuto, ex: ExecutionRecherche, jours: int 
         _creer_depuis_sirene(res, r, ex, signal)
 
 
-SOURCES = {"sirene": chercher_sirene, "bodacc": chercher_bodacc, "georisques": chercher_georisques, "francetravail": chercher_francetravail}
+DEPARTEMENTS = [f"{i:02d}" for i in range(1, 96) if i != 20] + ["2A", "2B", "971", "972", "973", "974", "976"]
+URL_GEO = "https://geo.api.gouv.fr/communes"
+DISTANCE_LBB = 50  # km autour de la commune la plus peuplée du département
+_centres: dict[str, dict] = {}
+
+
+def centre_departement(dep: str) -> dict | None:
+    """Commune la plus peuplée du département (code INSEE et coordonnées), pour centrer la recherche La Bonne Boîte."""
+    if dep not in _centres:
+        communes = get_json(URL_GEO, params={"codeDepartement": dep, "fields": "code,nom,centre,population", "format": "json"}) or []
+        time.sleep(PAUSE)
+        c = max((x for x in communes if x.get("centre")), key=lambda x: x.get("population") or 0, default=None)
+        if not c:
+            return None
+        lon, lat = c["centre"]["coordinates"]
+        _centres[dep] = {"citycode": c["code"], "nom": c.get("nom", ""), "latitude": lat, "longitude": lon}
+    return _centres[dep]
+
+
+ROME = re.compile(r"\b[A-N]\d{4}\b")
+
+
+def _naf_pointe(naf: str) -> str:
+    n = (naf or "").replace(".", "").upper()
+    return f"{n[:2]}.{n[2:]}" if len(n) == 5 else n
+
+
+def chercher_labonneboite(r: RechercheAuto, ex: ExecutionRecherche) -> None:
+    """Entreprises qui devraient recruter dans les 6 mois sur des métiers exposés (manutention, production, soins…) :
+    signal « recrutements à venir ». Parcours des départements par lots, d'une nuit à l'autre."""
+    from . import francetravail as ft
+
+    romes = ROME.findall(r.mots_cles.upper())
+    if not romes:
+        raise ValueError("Indiquez au moins un code métier ROME dans « Mots-clés » (ex. N1103 pour le magasinage).")
+    deps = r.liste_departements() or DEPARTEMENTS
+    debut = (r.page_suivante - 1) % len(deps)
+    lot = [deps[(debut + i) % len(deps)] for i in range(min(PAGES_PAR_NUIT, len(deps)))]
+    r.page_suivante = (debut + len(lot)) % len(deps) + 1
+    vus: dict[str, dict] = {}
+    for dep in lot:
+        centre = centre_departement(dep)
+        if not centre:
+            continue
+        for rome in romes:
+            for e in ft.labonneboite({"rome": rome, "citycode": centre["citycode"], "latitude": centre["latitude"],
+                                      "longitude": centre["longitude"], "distance": DISTANCE_LBB}):
+                siret = str(e.get("siret") or "")
+                if len(siret) == 14 and (siret not in vus or (e.get("hiring_potential") or 0) > (vus[siret].get("hiring_potential") or 0)):
+                    vus[siret] = e
+            time.sleep(PAUSE)
+    for e in sorted(vus.values(), key=lambda x: x.get("hiring_potential") or 0, reverse=True):
+        if ex.crees >= r.max_par_nuit:
+            break
+        ex.examines += 1
+        mini, maxi = e.get("headcount_min") or 0, e.get("headcount_max") or 0
+        if (maxi and maxi < r.effectif_min) or (r.effectif_max and mini > r.effectif_max) \
+                or not correspond_naf(_naf_pointe(e.get("naf", "")), r.liste_naf()) or (e.get("naf") or "").startswith("78"):
+            ex.ignores += 1
+            continue
+        siren = e["siret"][:9]
+        texte = (f"{'Très fort' if e.get('is_high_potential') else 'Fort'} potentiel d'embauche dans les 6 mois "
+                 f"(métier {e.get('rome', '')}, établissement de {e.get('city', '?')})")
+        signal = ("recrut", texte, "La Bonne Boîte", "https://labonneboite.francetravail.fr/", None)
+        existant = _existe(siren, e.get("company_name", ""))
+        if existant:
+            depuis = timezone.localdate() - timedelta(days=60)
+            if not existant.signaux.filter(source="La Bonne Boîte", date_signal__gte=depuis).exists():
+                Signal.objects.create(compte=existant, type="recrut", texte=texte[:300], source="La Bonne Boîte", url=signal[3])
+                recalculer(existant)
+                ex.signaux += 1
+            continue
+        res = _sirene_par_siren(siren)
+        if not res or not _filtre_entreprise(res, r):
+            ex.ignores += 1
+            continue
+        _creer_depuis_sirene(res, r, ex, signal)
+
+
+SOURCES = {"sirene": chercher_sirene, "bodacc": chercher_bodacc, "georisques": chercher_georisques, "francetravail": chercher_francetravail,
+           "labonneboite": chercher_labonneboite}
 
 
 def executer(r: RechercheAuto) -> ExecutionRecherche:
@@ -351,14 +433,17 @@ def executer(r: RechercheAuto) -> ExecutionRecherche:
     except Exception as e:  # une source en panne ne bloque pas les autres
         log.warning("Recherche « %s » : %s", r, e)
         ex.erreur = f"{e.__class__.__name__} : {e}"[:1000]
+        if "invalid_scope" in str(e):  # l'application France Travail n'a pas accès à cette API : inutile de réessayer chaque nuit
+            r.actif = False
+            ex.erreur = (f"Recherche désactivée : votre application France Travail n'a pas accès à cette API. {ex.erreur}")[:1000]
     r.derniere_execution = timezone.now()
-    r.save(update_fields=["page_suivante", "derniere_execution"])
+    r.save(update_fields=["page_suivante", "derniere_execution", "actif"])
     ex.save()
     return ex
 
 
 def disponible(r: RechercheAuto) -> bool:
-    if r.source == "francetravail":
+    if r.source in ("francetravail", "labonneboite"):
         from .francetravail import configure
         return configure()
     return True

@@ -51,7 +51,7 @@ Ces atouts pèsent surtout là où il faut **coordonner plusieurs sites et plusi
 | 5 | **Hôtellerie-restauration en réseau** | Saisonniers, ERP, rotation | Sessions courtes, horaires décalés ; avant la saison |
 | 6 | **Acheteurs publics** (via FORM'AO) | Marchés récurrents | Sourçage avant publication |
 
-Les recherches automatiques livrées par défaut suivent cet ordre. Toutes visent la France entière, entre 50 et 2 000 salariés.
+Les recherches automatiques livrées par défaut suivent cet ordre. La source La Bonne Boîte (France Travail) ajoute un signal d'intention : les entreprises qui devraient embaucher dans les 6 mois sur des métiers exposés (manutention, production, soins), donc former de nouveaux salariés. Toutes visent la France entière, entre 50 et 2 000 salariés.
 
 ## 4. Saisonnalité
 

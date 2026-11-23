@@ -130,3 +130,9 @@ Après avoir corrigé le `.env`, relancez l'outil (`bash deploy/mettre_a_jour.sh
 ## Coûts IA
 
 Le menu *Réglages > Coûts IA* affiche la dépense du mois (estimée d'après les jetons consommés), la projection de fin de mois et le budget. Une alerte apparaît dans *Ma journée* à partir de 80 % du budget. Par défaut, l'IA est suspendue une fois le budget atteint : les modèles intégrés prennent le relais. Le simulateur estime le coût mensuel selon les volumes prévus et compare les modèles. Les tarifs sont dans `prospection/services/couts_ia.py`. La facture Anthropic fait foi.
+
+## La Bonne Boîte (France Travail)
+
+Avec les mêmes identifiants France Travail, la source « La Bonne Boîte » trouve les entreprises qui devraient recruter dans les 6 mois sur un métier donné (codes ROME). Votre application doit être abonnée à l'API « La Bonne Boîte v2 ». Trois recherches sont livrées : logistique, industrie, santé et médico-social. En France entière, elles parcourent huit départements par nuit.
+
+Pour vérifier les droits de l'application : `.venv/bin/python manage.py prospection_diagnostic_ft`. Une recherche « offres d'emploi » dont l'API n'est pas accessible se désactive d'elle-même, avec l'explication dans le journal.

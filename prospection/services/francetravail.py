@@ -15,6 +15,8 @@ import httpx
 JETON_URL = "https://entreprise.francetravail.fr/connexion/oauth2/access_token"
 OFFRES_URL = "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search"
 PORTEE = "api_offresdemploiv2 o2dsoffre"
+PORTEE_LBB = "api_labonneboitev2 search office"
+LBB_RECHERCHE = "https://api.francetravail.io/partenaire/labonneboite/v2/recherche"
 TAILLE_PAGE = 150
 _cache: dict = {}
 
@@ -49,21 +51,22 @@ def _cause(r) -> str:
     return f"France Travail refuse la connexion ({r.status_code}{', ' + code if code else ''}) : {conseil}." + (f" Détail : {detail}" if detail else "")
 
 
-def jeton(client: httpx.Client | None = None) -> str:
-    if _cache.get("jeton") and _cache.get("expire", 0) > time.time() + 60:
-        return _cache["jeton"]
+def jeton(client: httpx.Client | None = None, portee: str = PORTEE) -> str:
+    j, expire = _cache.get(portee, ("", 0))
+    if j and expire > time.time() + 60:
+        return j
     if not configure():
         raise FranceTravailIndisponible("Identifiants France Travail absents : renseignez FRANCETRAVAIL_CLIENT_ID et FRANCETRAVAIL_CLIENT_SECRET dans le .env.")
     h = client or httpx.Client(timeout=30)
     r = h.post(JETON_URL, params={"realm": "/partenaire"}, data={
         "grant_type": "client_credentials", "client_id": _env("FRANCETRAVAIL_CLIENT_ID"),
-        "client_secret": _env("FRANCETRAVAIL_CLIENT_SECRET"), "scope": PORTEE,
+        "client_secret": _env("FRANCETRAVAIL_CLIENT_SECRET"), "scope": portee,
     })
     if r.status_code != 200:
         raise FranceTravailIndisponible(_cause(r))
     d = r.json()
-    _cache.update(jeton=d["access_token"], expire=time.time() + int(d.get("expires_in", 1499)))
-    return _cache["jeton"]
+    _cache[portee] = (d["access_token"], time.time() + int(d.get("expires_in", 1499)))
+    return d["access_token"]
 
 
 def offres(params: dict, max_offres: int = 600, client: httpx.Client | None = None) -> list[dict]:
@@ -87,6 +90,20 @@ def offres(params: dict, max_offres: int = 600, client: httpx.Client | None = No
             break
         debut += TAILLE_PAGE
     return resultats
+
+
+def labonneboite(params: dict, client: httpx.Client | None = None) -> list[dict]:
+    """Entreprises à fort potentiel d'embauche dans les 6 mois (API La Bonne Boîte v2, recherche par métier ROME et lieu)."""
+    h = client or httpx.Client(timeout=30)
+    r = h.get(LBB_RECHERCHE, params=params, headers={"Authorization": f"Bearer {jeton(h, PORTEE_LBB)}", "Accept": "application/json"})
+    if r.status_code == 401:
+        _cache.pop(PORTEE_LBB, None)
+        raise FranceTravailIndisponible("Jeton La Bonne Boîte refusé : réessayez ; si cela persiste, vérifiez l'abonnement à l'API.")
+    if r.status_code == 204:
+        return []
+    if r.status_code != 200:
+        raise FranceTravailIndisponible(f"La Bonne Boîte a répondu {r.status_code} : {r.text[:200]}")
+    return r.json().get("items") or []
 
 
 def depuis(jours: int) -> str:

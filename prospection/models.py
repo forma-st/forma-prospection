@@ -566,7 +566,7 @@ class RechercheAuto(models.Model):
     """Profil de recherche exécuté chaque nuit dans les sources publiques gratuites."""
 
     SOURCES = [("sirene", "Annuaire des entreprises (cible)"), ("bodacc", "BODACC (nouveaux établissements)"), ("georisques", "Géorisques (sites ICPE)"),
-               ("francetravail", "France Travail (offres d'emploi)")]
+               ("francetravail", "France Travail (offres d'emploi)"), ("labonneboite", "La Bonne Boîte (embauches à venir)")]
     nom = models.CharField(max_length=120)
     source = models.CharField(max_length=20, choices=SOURCES, default="sirene")
     actif = models.BooleanField(default=True)
@@ -577,7 +577,8 @@ class RechercheAuto(models.Model):
     etablissements_min = models.PositiveIntegerField("Établissements minimum", default=1, help_text="2 ou plus pour viser les réseaux multi-sites.")
     segment = models.CharField(max_length=20, choices=regles.SEGMENT_CHOICES, blank=True, help_text="Vide = déduit du code NAF.")
     mots_cles = models.CharField("Mots-clés (France Travail)", max_length=255, blank=True,
-                                 help_text="Séparés par des virgules, ex. QSE, HSE, responsable sécurité. Vide = recrutements en nombre par secteur.")
+                                 help_text="France Travail : ex. QSE, HSE, responsable sécurité (vide = recrutements en nombre). "
+                                           "La Bonne Boîte : codes métier ROME, ex. N1103, N1105.")
     seuil_offres = models.PositiveSmallIntegerField("Offres min. par entreprise", default=10, help_text="Pour les recrutements en nombre (France Travail).")
     palier_min = models.CharField("Adéquation minimale", max_length=1, default="B",
                                   choices=[("A", "Forte (80 et plus)"), ("B", "Bonne (65 et plus)"), ("C", "Toutes")])

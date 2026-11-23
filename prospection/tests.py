@@ -534,7 +534,7 @@ class RechercheAutomatique(TestCase):
         self.assertTrue(recherche.correspond_naf("10.13A", ["10"]))
         self.assertFalse(recherche.correspond_naf("20.16Z", ["10", "52.10B"]))
         self.assertEqual(recherche.section_de("22"), "C")
-        self.assertEqual(RechercheAuto.objects.count(), 10)
+        self.assertEqual(RechercheAuto.objects.count(), 13)
 
     def test_sirene_filtre_et_dedoublonne(self):
         page = {"results": [entreprise("111111118", "ENTREPOTS DU NORD"), entreprise("222222226", "FERMEE SA", etat="C"),
@@ -839,3 +839,90 @@ class CoutsIA(TestCase):
         self.client.force_login(User.objects.create_user("paul", password="x"))
         self.assertEqual(self.client.get("/prospection/couts-ia/").status_code, 200)
         self.assertEqual(self.client.post("/prospection/couts-ia/", {"budget": "999"}).status_code, 404)
+
+
+# ------------------------------------------------------------------ La Bonne Boîte
+
+
+def lbb(siret, nom, naf="5210B", hp=80.0, mini=50, maxi=99, ville="Cergy"):
+    return {"rome": "N1103", "siret": siret, "company_name": nom, "naf": naf, "headcount_min": mini, "headcount_max": maxi,
+            "city": ville, "postcode": "95000", "department_number": "95", "hiring_potential": hp, "is_high_potential": hp > 90}
+
+
+class LaBonneBoite(TestCase):
+    def setUp(self):
+        ft._cache.clear()
+        recherche._centres.clear()
+        self.r = RechercheAuto.objects.get(nom__startswith="Embauches à venir : logistique")
+        self.r.departements = "95"
+        self.r.save()
+
+    def _executer(self, items, sirene=None):
+        geo = [{"code": "95018", "nom": "Argenteuil", "population": 110000, "centre": {"coordinates": [2.25, 48.95]}},
+               {"code": "95127", "nom": "Cergy", "population": 66000, "centre": {"coordinates": [2.06, 49.04]}}]
+        sirene = sirene or {"results": [entreprise("111111118", "ENTREPOTS DU NORD")]}
+
+        def get_json(url, params=None, **kw):
+            return geo if "geo.api" in url else sirene
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "a", "FRANCETRAVAIL_CLIENT_SECRET": "b"}), \
+                mock.patch("prospection.services.recherche.get_json", side_effect=get_json), \
+                mock.patch("prospection.services.recherche.time.sleep"), \
+                mock.patch.object(ft, "labonneboite", return_value=items) as appel:
+            ex = recherche.executer(self.r)
+        return ex, appel
+
+    def test_cree_prospect_avec_signal(self):
+        ex, appel = self._executer([lbb("11111111800012", "ENTREPOTS DU NORD", hp=95), lbb("22222222600015", "PETIT", maxi=9),
+                                    lbb("33333333400011", "AGENCE INTERIM", naf="7820Z")])
+        p = appel.call_args_list[0].args[0]
+        self.assertEqual((p["rome"], p["citycode"], p["distance"]), ("N1101", "95018", 50))  # commune la plus peuplée
+        self.assertEqual(appel.call_count, 3)  # un appel par métier ROME
+        self.assertEqual((ex.crees, ex.ignores, ex.erreur), (1, 2, ""))
+        c = Compte.objects.get(siren="111111118")
+        s = c.signaux.get()
+        self.assertEqual((s.type, s.source), ("recrut", "La Bonne Boîte"))
+        self.assertIn("Très fort potentiel", s.texte)
+
+    def test_compte_existant_recoit_un_signal_une_fois(self):
+        c = vexin()
+        ex, _ = self._executer([lbb("91234567100015", "Logistique du Vexin")])
+        self.assertEqual((ex.crees, ex.signaux), (0, 1))
+        self.assertTrue(c.signaux.filter(source="La Bonne Boîte").exists())
+        ex, _ = self._executer([lbb("91234567100015", "Logistique du Vexin")])
+        self.assertEqual(ex.signaux, 0)
+
+    def test_rotation_des_departements(self):
+        self.r.departements = ""
+        self.r.save()
+        self._executer([])
+        self.r.refresh_from_db()
+        self.assertEqual(self.r.page_suivante, 9)  # huit départements par nuit
+
+    def test_sans_code_rome(self):
+        self.r.mots_cles = "magasinier"
+        ex, _ = self._executer([])
+        self.assertIn("ROME", ex.erreur)
+
+    def test_offres_inaccessibles_desactive_la_recherche(self):
+        r = RechercheAuto.objects.get(nom__startswith="Recrutements QSE")
+        with mock.patch.object(recherche, "chercher_francetravail", side_effect=ft.FranceTravailIndisponible("(400, invalid_scope)")), \
+                mock.patch.dict(recherche.SOURCES, {"francetravail": recherche.chercher_francetravail}):
+            ex = recherche.executer(r)
+        r.refresh_from_db()
+        self.assertFalse(r.actif)
+        self.assertIn("désactivée", ex.erreur)
+
+    def test_client_lbb(self):
+        class H:
+            def post(self, url, **kw):
+                H.portee = kw["data"]["scope"]
+                return SimpleNamespace(status_code=200, json=lambda: {"access_token": "j", "expires_in": 1499})
+
+            def get(self, url, **kw):
+                H.url = url
+                return SimpleNamespace(status_code=200, json=lambda: {"hits": 1, "items": [lbb("11111111800012", "X")]}, text="")
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "a", "FRANCETRAVAIL_CLIENT_SECRET": "b"}):
+            items = ft.labonneboite({"rome": "N1103"}, client=H())
+        self.assertEqual(len(items), 1)
+        self.assertEqual(H.portee, "api_labonneboitev2 search office")
+        self.assertTrue(H.url.endswith("/labonneboite/v2/recherche"))
