@@ -712,6 +712,29 @@ class FranceTravailErreurs(TestCase):
         self.assertIn("régénérez", str(e.exception))
 
 
+class DiagnosticFT(TestCase):
+    def test_portees_et_chemins(self):
+        class H:
+            gets = []
+
+            def post(self, url, **kw):
+                ok = kw["data"]["scope"] == "api_labonneboitev2"
+                return SimpleNamespace(status_code=200 if ok else 400, text="",
+                                       json=(lambda: {"access_token": "j", "scope": "api_labonneboitev2"}) if ok else (lambda: {"error": "invalid_scope"}))
+
+            def get(self, url, **kw):
+                H.gets.append(url)
+                return SimpleNamespace(status_code=200 if url.endswith("/recherche") else 404, text='{"hits": 1,\n "items": []}')
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "PAR_forma_123456", "FRANCETRAVAIL_CLIENT_SECRET": "tres-secret"}):
+            lignes = ft.diagnostic(H())
+        texte = "\n".join(lignes)
+        self.assertIn("PORTÉE ACCEPTÉE  « api_labonneboitev2 »", texte)
+        self.assertIn("invalid_scope", texte)
+        self.assertIn('GET /recherche : 200 · {"hits": 1, "items": []}', texte)
+        self.assertNotIn("tres-secret", texte)
+        self.assertEqual(len(H.gets), len(ft.CHEMINS_LBB))
+
+
 # ------------------------------------------------------------------ Coûts IA
 
 from decimal import Decimal  # noqa: E402

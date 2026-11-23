@@ -95,3 +95,55 @@ def depuis(jours: int) -> str:
 
 def maintenant() -> str:
     return datetime.now(tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# ------------------------------------------------------------------ Diagnostic (découverte des API de l'application)
+
+LBB_URL = "https://api.francetravail.io/partenaire/labonneboite/v2"
+PORTEES_A_TESTER = [
+    PORTEE,
+    "api_labonneboitev2",
+    "api_labonneboitev2 search office",
+    "api_labonneboitev2 office",
+    "api_labonneboitev2 search",
+]
+CHEMINS_LBB = ["", "/recherche", "/entreprises", "/search", "/companies", "/office", "/count", "/nombre",
+               "/openapi.json", "/swagger.json", "/v3/api-docs"]
+ESSAI_LBB = {"rome": "N1103", "romes": "N1103", "citycode": "95127", "commune": "95127", "distance": "30",
+             "latitude": "49.0364", "longitude": "2.0761"}  # magasinage / Cergy
+
+
+def diagnostic(client: httpx.Client | None = None) -> list[str]:
+    """Teste chaque portée possible, puis interroge La Bonne Boîte pour en découvrir les chemins et les champs.
+    Lecture seule ; n'affiche jamais la clé secrète ni le jeton."""
+    h = client or httpx.Client(timeout=30)
+    lignes = [f"Identifiant : {_env('FRANCETRAVAIL_CLIENT_ID')[:12]}… (clé secrète {'présente' if _env('FRANCETRAVAIL_CLIENT_SECRET') else 'ABSENTE'})"]
+    if not configure():
+        return lignes + ["Identifiants absents du .env : rien à tester."]
+    jetons = {}
+    for portee in PORTEES_A_TESTER:
+        r = h.post(JETON_URL, params={"realm": "/partenaire"}, data={
+            "grant_type": "client_credentials", "client_id": _env("FRANCETRAVAIL_CLIENT_ID"),
+            "client_secret": _env("FRANCETRAVAIL_CLIENT_SECRET"), "scope": portee})
+        if r.status_code == 200:
+            d = r.json()
+            jetons[portee] = d["access_token"]
+            lignes.append(f"PORTÉE ACCEPTÉE  « {portee} » (accordée : « {d.get('scope', '?')} »)")
+        else:
+            try:
+                code = r.json().get("error", "")
+            except ValueError:
+                code = ""
+            lignes.append(f"portée refusée   « {portee} » ({r.status_code} {code})")
+    lbb = next((j for p, j in jetons.items() if "labonneboite" in p), None)
+    if not lbb:
+        return lignes + ["Aucune portée La Bonne Boîte acceptée : copiez la portée exacte depuis la page de l'API (rubrique Authentification)."]
+    for chemin in CHEMINS_LBB:
+        try:
+            r = h.get(LBB_URL + chemin, params=ESSAI_LBB, headers={"Authorization": f"Bearer {lbb}", "Accept": "application/json"})
+        except httpx.HTTPError as e:
+            lignes.append(f"GET {chemin or '/'} : erreur réseau {e.__class__.__name__}")
+            continue
+        corps = " ".join(r.text.split())
+        lignes.append(f"GET {chemin or '/'} : {r.status_code} · {corps[:1500]}")
+    return lignes
