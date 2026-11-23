@@ -171,10 +171,27 @@ PLIST
   <key>StandardOutPath</key><string>$RACINE/logs/envois.log</string><key>StandardErrorPath</key><string>$RACINE/logs/envois.log</string>
 </dict></plist>
 PLIST
+    AGENTS_OK=1
     for f in fr.formast.prospection fr.formast.prospection.matin fr.formast.prospection.envois; do
       launchctl bootout "gui/$(id -u)/$f" 2>/dev/null || true
-      launchctl bootstrap "gui/$(id -u)" "$AGENTS/$f.plist"
     done
+    sleep 2  # macOS refuse parfois de réenregistrer un agent qu'il vient d'arrêter
+    for f in fr.formast.prospection fr.formast.prospection.matin fr.formast.prospection.envois; do
+      if ! launchctl bootstrap "gui/$(id -u)" "$AGENTS/$f.plist" 2>/dev/null; then
+        sleep 3
+        if ! launchctl bootstrap "gui/$(id -u)" "$AGENTS/$f.plist"; then
+          AGENTS_OK=0
+          echo "    Impossible d'activer $f. Relancez :  launchctl bootstrap gui/$(id -u) $AGENTS/$f.plist"
+        fi
+      fi
+    done
+    sleep 2
+    if launchctl print "gui/$(id -u)/fr.formast.prospection" >/dev/null 2>&1; then
+      echo "    Démarrage automatique actif."
+    else
+      AGENTS_OK=0
+      echo "    L'outil n'a pas démarré automatiquement. Lancez-le à la main :  bash deploy/demarrer.sh"
+    fi
     echo "    Lancé maintenant, et à chaque ouverture de session. Envois et réponses toutes les 5 minutes ; traitement du matin à 7 h 40 (Mac allumé)."
   else
     ( crontab -l 2>/dev/null | grep -v "$RACINE/deploy/" ; \
