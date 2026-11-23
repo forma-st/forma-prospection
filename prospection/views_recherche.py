@@ -14,10 +14,11 @@ from django.utils import timezone
 from . import regles
 from .models import ExecutionRecherche, RechercheAuto
 from .services import recherche as svc
+from .services.francetravail import configure as ft_configure
 from .views import _ctx
 
-CHAMPS = ["nom", "source", "codes_naf", "departements", "segment", "palier_min", "mois_actifs"]
-NOMBRES = ["effectif_min", "effectif_max", "etablissements_min", "max_par_nuit"]
+CHAMPS = ["nom", "source", "codes_naf", "departements", "segment", "palier_min", "mois_actifs", "mots_cles"]
+NOMBRES = ["effectif_min", "effectif_max", "etablissements_min", "max_par_nuit", "seuil_offres"]
 
 
 def _lancer_en_arriere_plan(r: RechercheAuto) -> None:
@@ -65,5 +66,5 @@ def recherches(request):
     return render(request, "prospection/recherches.html", _ctx(
         request, liste=liste, edit=RechercheAuto.objects.filter(pk=request.GET.get("id")).first() if request.GET.get("id") else None,
         nouveau=request.GET.get("nouveau"), journal=ExecutionRecherche.objects.select_related("recherche")[:30], sources=RechercheAuto.SOURCES,
-        segments=regles.SEGMENT_CHOICES, saison=regles.SAISONS[mois], mois=mois, bilan=svc.bilan_nuit(),
+        segments=regles.SEGMENT_CHOICES, saison=regles.SAISONS[mois], mois=mois, bilan=svc.bilan_nuit(), ft_configure=ft_configure(),
     ))

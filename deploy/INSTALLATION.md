@@ -51,7 +51,14 @@ Le script installe les dépendances, crée le fichier `.env`, prépare la base (
 |---|---|
 | `ANTHROPIC_API_KEY=sk-ant-…` | Bouton « Améliorer avec l'IA ». Sans clé, les modèles intégrés suffisent |
 | `FORMAO_URL=http://localhost:8000` et `FORMAO_JETON=…` | Lien avec FORM'AO : import des acheteurs publics, reprise du profil et du catalogue. FORM'AO doit exposer l'API décrite dans `docs/API_FORMAO.md` |
+| `FRANCETRAVAIL_CLIENT_ID`, `FRANCETRAVAIL_CLIENT_SECRET` | Recherche automatique dans les offres d'emploi : recrutements QSE / HSE et recrutements en nombre. Voir ci-dessous |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | Option LinkedIn (à activer aussi dans *Paramètres*). URL de redirection à déclarer : `http://localhost:8010/prospection/linkedin/retour/`, connexion à faire depuis l'ordinateur qui héberge l'outil |
+
+**Obtenir les identifiants France Travail** (gratuit, 10 minutes) :
+1. Créez un compte sur https://francetravail.io (espace développeurs), puis une **application**.
+2. Abonnez l'application à l'API **« Offres d'emploi v2 »**.
+3. Copiez l'**identifiant client** et la **clé secrète** dans `.env` (`FRANCETRAVAIL_CLIENT_ID`, `FRANCETRAVAIL_CLIENT_SECRET`), puis redémarrez.
+4. Dans *Recherche automatique*, cliquez sur « Lancer » sur « Recrutements QSE / HSE » pour vérifier.
 
 Redémarrer sur Mac :
 

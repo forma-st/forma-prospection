@@ -19,7 +19,8 @@ Application **indépendante** de FORM'AO (suivi, veille et gestion des appels d'
   - annuaire officiel des entreprises : activité, départements, effectif minimum et maximum, nombre de sites ;
   - BODACC : nouveaux établissements ;
   - Géorisques : sites industriels classés (ICPE) ;
-  - huit recherches livrées (France entière, sites industriels, réseaux multi-sites, de 50 à 2 000 salariés) ;
+  - France Travail : offres QSE / HSE (signal « recrutement QSE ») et recrutements en nombre, identifiants gratuits à créer ;
+  - dix recherches livrées (France entière, sites industriels, réseaux multi-sites, de 50 à 2 000 salariés) ;
   - priorité du mois affichée selon la saisonnalité. Analyse dans [docs/CIBLAGE.md](docs/CIBLAGE.md).
 - **Import** :
   - fichiers CSV ou Excel, avec correspondance des colonnes ;

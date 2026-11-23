@@ -10,7 +10,7 @@ Module **interne** de FORMA'ST, testé d'abord seul, puis intégré en tout ou p
 >
 > **v0.5** : reprise du meilleur de Sellsy, Axonaut, HubSpot, Furious et Attio (3.19).
 >
-> **v1.0 (23/11/2026)** : **recherche automatique de prospects** (phase 3, premières sources) : annuaire officiel, BODACC, Géorisques ; recherches livrées sur la France entière, sites industriels et réseaux multi-sites, 50 à 2 000 salariés ; saisonnalité. Analyse dans `docs/CIBLAGE.md`. Restent : France Travail (offres QSE), DECP, veille presse avec l'IA.
+> **v1.0 (23/11/2026)** : **recherche automatique de prospects** (phase 3, premières sources) : annuaire officiel, BODACC, Géorisques ; recherches livrées sur la France entière, sites industriels et réseaux multi-sites, 50 à 2 000 salariés ; saisonnalité. Analyse dans `docs/CIBLAGE.md`. France Travail ajouté (offres QSE / HSE et recrutements en nombre). Restent : DECP, veille presse avec l'IA.
 >
 > **v0.9 (23/11/2026)** : l'outil s'appelle **Forma Prospect**. Phase 2 livrée : messagerie (SMTP, relève IMAP, file d'envoi, plafonds, plages, mode test), séquences multicanales, tri des réponses, statistiques ; vue en colonnes et inscription groupée. Restent pour la suite : connexion Microsoft 365 (Graph), pilote automatique, automatisations Quand → Si → Alors, colonnes IA, enrichissement en cascade.
 >

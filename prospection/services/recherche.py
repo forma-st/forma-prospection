@@ -254,7 +254,94 @@ def chercher_georisques(r: RechercheAuto, ex: ExecutionRecherche) -> None:
     r.page_suivante = 1
 
 
-SOURCES = {"sirene": chercher_sirene, "bodacc": chercher_bodacc, "georisques": chercher_georisques}
+INTERIM = re.compile(r"\b(adecco|manpower|randstad|synergie|crit|start people|proman|samsic emploi|partnaire|interim|int[ée]rim|supplay|gojob|staffmatch|temporis|actual)\b", re.I)
+
+
+def _entreprise_offre(o: dict) -> tuple[str, str, str]:
+    e = o.get("entreprise") or {}
+    lieu = o.get("lieuTravail") or {}
+    cp = (lieu.get("codePostal") or "").strip()
+    dep = cp[:2] if cp else (lieu.get("libelle") or "")[:2]
+    return (e.get("nom") or "").strip(), cp, dep if dep.isdigit() or dep in ("2A", "2B") else ""
+
+
+def _sirene_par_nom(nom: str, cp: str, dep: str) -> dict | None:
+    from .sirene import chercher
+    temp = Compte(nom=nom, code_postal=cp, departement=dep)
+    res, confiance = chercher(temp)
+    time.sleep(PAUSE)
+    return res if res and confiance >= 80 else None
+
+
+def chercher_francetravail(r: RechercheAuto, ex: ExecutionRecherche, jours: int = 7) -> None:
+    """Deux usages : avec des mots-clés (offres QSE / HSE → signal « recrutement QSE »),
+    ou sans mot-clé, par secteur (beaucoup d'offres dans la même entreprise → signal « recrutement en nombre »)."""
+    from . import francetravail as ft
+
+    base = {"minCreationDate": ft.depuis(jours), "maxCreationDate": ft.maintenant()}
+    requetes = []
+    deps = r.liste_departements() or [""]
+    if r.mots_cles.strip():
+        for dep in deps:
+            requetes.append({**base, "motsCles": ",".join(m.strip() for m in r.mots_cles.replace("\n", ",").split(",") if m.strip())[:255],
+                             **({"departement": dep} if dep else {})})
+    else:
+        divisions = sorted({n.replace(".", "")[:2] for n in r.liste_naf() if n[:2].isdigit()})
+        for div in divisions or [""]:
+            for dep in deps:
+                requetes.append({**base, **({"secteurActivite": div} if div else {}), **({"departement": dep} if dep else {})})
+    par_entreprise: dict[str, list[dict]] = {}
+    vues: set[str] = set()
+    for q in requetes:
+        for o in ft.offres(q):
+            if o.get("id") in vues:  # la même offre peut revenir dans plusieurs requêtes
+                continue
+            vues.add(o.get("id"))
+            nom, cp, dep = _entreprise_offre(o)
+            if not nom or INTERIM.search(nom) or (o.get("codeNAF") or "").startswith("78"):
+                continue
+            par_entreprise.setdefault(normaliser(nom), []).append(o)
+    seuil = 1 if r.mots_cles.strip() else max(2, r.seuil_offres)
+    for liste in sorted(par_entreprise.values(), key=len, reverse=True):
+        if ex.crees >= r.max_par_nuit:
+            break
+        ex.examines += 1
+        if len(liste) < seuil:
+            ex.ignores += 1
+            continue
+        o = liste[0]
+        nom, cp, dep = _entreprise_offre(o)
+        if r.mots_cles.strip():
+            type_, texte = "qse", f"Offre d'emploi « {o.get('intitule', '')[:120]} » ({(o.get('lieuTravail') or {}).get('libelle', '')})"
+        else:
+            type_, texte = "recrut", f"{len(liste)} offres d'emploi publiées en {jours} jours (dont « {o.get('intitule', '')[:80]} »)"
+        url = (o.get("origineOffre") or {}).get("urlOrigine") or (f"https://candidat.francetravail.fr/offres/recherche/detail/{o['id']}" if o.get("id") else "")
+        d = (o.get("dateCreation") or "")[:10]
+        signal = (type_, texte, "France Travail", url, date.fromisoformat(d) if d else None)
+        existant = _existe("", nom)
+        if existant:
+            if not existant.signaux.filter(type=type_, source="France Travail", date_signal=signal[4] or timezone.localdate()).exists():
+                Signal.objects.create(compte=existant, type=type_, texte=texte[:300], source="France Travail", url=url, date_signal=signal[4] or timezone.localdate())
+                recalculer(existant)
+                ex.signaux += 1
+            continue
+        res = _sirene_par_nom(nom, cp, dep)
+        if not res:
+            ex.ignores += 1
+            continue
+        existant = Compte.objects.filter(siren=res.get("siren", "")).first()
+        if existant:
+            Signal.objects.create(compte=existant, type=type_, texte=texte[:300], source="France Travail", url=url, date_signal=signal[4] or timezone.localdate())
+            recalculer(existant)
+            ex.signaux += 1
+            continue
+        if not _filtre_entreprise(res, r):
+            ex.ignores += 1
+            continue
+        _creer_depuis_sirene(res, r, ex, signal)
+
+
+SOURCES = {"sirene": chercher_sirene, "bodacc": chercher_bodacc, "georisques": chercher_georisques, "francetravail": chercher_francetravail}
 
 
 def executer(r: RechercheAuto) -> ExecutionRecherche:
@@ -270,8 +357,16 @@ def executer(r: RechercheAuto) -> ExecutionRecherche:
     return ex
 
 
+def disponible(r: RechercheAuto) -> bool:
+    if r.source == "francetravail":
+        from .francetravail import configure
+        return configure()
+    return True
+
+
 def executer_tout(forcer: bool = False) -> list[ExecutionRecherche]:
-    return [executer(r) for r in RechercheAuto.objects.filter(actif=True) if forcer or r.active_ce_mois()]
+    """Les recherches France Travail sont ignorées tant que les identifiants ne sont pas renseignés."""
+    return [executer(r) for r in RechercheAuto.objects.filter(actif=True) if (forcer or r.active_ce_mois()) and disponible(r)]
 
 
 def bilan_nuit(heures: int = 24) -> dict:

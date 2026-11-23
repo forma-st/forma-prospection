@@ -534,7 +534,7 @@ class RechercheAutomatique(TestCase):
         self.assertTrue(recherche.correspond_naf("10.13A", ["10"]))
         self.assertFalse(recherche.correspond_naf("20.16Z", ["10", "52.10B"]))
         self.assertEqual(recherche.section_de("22"), "C")
-        self.assertEqual(RechercheAuto.objects.count(), 8)
+        self.assertEqual(RechercheAuto.objects.count(), 10)
 
     def test_sirene_filtre_et_dedoublonne(self):
         page = {"results": [entreprise("111111118", "ENTREPOTS DU NORD"), entreprise("222222226", "FERMEE SA", etat="C"),
@@ -608,3 +608,79 @@ class RechercheAutomatique(TestCase):
         ExecutionRecherche.objects.create(recherche=self.r, examines=40, crees=3)
         self.assertContains(self.client.get("/prospection/"), "Voir les prospects trouvés")
         self.assertEqual(self.client.get("/prospection/prospects/?vue=auto").status_code, 200)
+
+
+# ---------------------------------------------------------------------------- France Travail
+
+from .services import francetravail as ft  # noqa: E402
+
+
+class FauxHttpFT:
+    def __init__(self, reponses):
+        self.reponses, self.appels = list(reponses), []
+
+    def post(self, url, **kw):
+        self.appels.append(("POST", url, kw))
+        return SimpleNamespace(status_code=200, json=lambda: {"access_token": "jeton-ft", "expires_in": 1499})
+
+    def get(self, url, **kw):
+        self.appels.append(("GET", url, kw))
+        code, data = self.reponses.pop(0)
+        return SimpleNamespace(status_code=code, json=lambda: data, text=str(data))
+
+
+def offre(id_, nom, intitule="Responsable QSE", cp="95100", naf=""):
+    return {"id": id_, "intitule": intitule, "dateCreation": "2026-11-20T10:00:00.000Z", "codeNAF": naf,
+            "entreprise": {"nom": nom}, "lieuTravail": {"libelle": "95 - Argenteuil", "codePostal": cp}}
+
+
+@mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "id", "FRANCETRAVAIL_CLIENT_SECRET": "secret"})
+@mock.patch("prospection.services.recherche.time.sleep", lambda s: None)
+class FranceTravail(TestCase):
+    def setUp(self):
+        ft._cache.clear()
+        self.qse = RechercheAuto.objects.get(nom__startswith="Recrutements QSE")
+        self.volume = RechercheAuto.objects.get(nom__startswith="Recrutements en nombre")
+
+    def test_client_pages_et_jeton(self):
+        h = FauxHttpFT([(206, {"resultats": [offre(str(i), "A") for i in range(150)]}), (206, {"resultats": [offre("x", "B")]})])
+        res = ft.offres({"motsCles": "QSE"}, client=h)
+        self.assertEqual(len(res), 151)
+        self.assertEqual(h.appels[0][2]["data"]["scope"], "api_offresdemploiv2 o2dsoffre")
+        self.assertEqual([a[2]["params"]["range"] for a in h.appels if a[0] == "GET"], ["0-149", "150-299"])
+        self.assertEqual(ft.offres({}, client=FauxHttpFT([(204, {})])), [])
+        with self.assertRaises(ft.FranceTravailIndisponible):
+            ft.offres({}, client=FauxHttpFT([(401, {})]))
+
+    def test_qse_cree_prospect_et_signal(self):
+        connu = Compte.objects.create(nom="Usine Connue", segment="industrie", effectif=200)
+        offres = [offre("1", "Entrepots du Nord"), offre("2", "Usine Connue", intitule="Animateur HSE"), offre("3", "ADECCO Argenteuil"), offre("4", "")]
+        with mock.patch("prospection.services.francetravail.offres", return_value=offres), \
+             mock.patch("prospection.services.recherche._sirene_par_nom", return_value=entreprise("111111118", "ENTREPOTS DU NORD")):
+            ex = recherche.executer(self.qse)
+        self.assertEqual((ex.crees, ex.signaux, ex.erreur), (1, 1, ""))
+        c = Compte.objects.get(siren="111111118")
+        s = c.signaux.get()
+        self.assertEqual((s.type, s.source), ("qse", "France Travail"))
+        self.assertIn("Responsable QSE", s.texte)
+        self.assertTrue(connu.signaux.filter(type="qse").exists())
+        self.assertFalse(Compte.objects.filter(nom__icontains="adecco").exists())
+
+    def test_recrutement_en_nombre(self):
+        offres = [offre(str(i), "Logistique Volume", intitule="Préparateur de commandes") for i in range(12)] + [offre("x", "Petite Boite")]
+        with mock.patch("prospection.services.francetravail.offres", return_value=offres) as f, \
+             mock.patch("prospection.services.recherche._sirene_par_nom", return_value=entreprise("111111118", "LOGISTIQUE VOLUME")):
+            ex = recherche.executer(self.volume)
+        self.assertIn("secteurActivite", f.call_args_list[0].args[0])
+        self.assertEqual(ex.crees, 1)
+        self.assertIn("12 offres", Compte.objects.get(siren="111111118").signaux.get(type="recrut").texte)
+
+    def test_ignore_sans_identifiants(self):
+        with mock.patch.dict("os.environ", {"FRANCETRAVAIL_CLIENT_ID": "", "FRANCETRAVAIL_CLIENT_SECRET": ""}):
+            self.assertFalse(recherche.disponible(self.qse))
+            with mock.patch("prospection.services.recherche.SOURCES", {k: (lambda r, ex: None) for k in recherche.SOURCES}):
+                sources = {e.recherche.source for e in recherche.executer_tout(forcer=True)}
+            self.assertNotIn("francetravail", sources)
+            u = User.objects.create_user("julie", password="x", is_staff=True)
+            self.client.force_login(u)
+            self.assertContains(self.client.get("/prospection/recherche-automatique/"), "identifiants à renseigner")

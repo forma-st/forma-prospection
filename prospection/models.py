@@ -558,9 +558,10 @@ class Message(models.Model):
 class RechercheAuto(models.Model):
     """Profil de recherche exécuté chaque nuit dans les sources publiques gratuites."""
 
-    SOURCES = [("sirene", "Annuaire des entreprises (cible)"), ("bodacc", "BODACC (nouveaux établissements)"), ("georisques", "Géorisques (sites ICPE)")]
+    SOURCES = [("sirene", "Annuaire des entreprises (cible)"), ("bodacc", "BODACC (nouveaux établissements)"), ("georisques", "Géorisques (sites ICPE)"),
+               ("francetravail", "France Travail (offres d'emploi)")]
     nom = models.CharField(max_length=120)
-    source = models.CharField(max_length=12, choices=SOURCES, default="sirene")
+    source = models.CharField(max_length=20, choices=SOURCES, default="sirene")
     actif = models.BooleanField(default=True)
     codes_naf = models.TextField("Codes NAF", blank=True, help_text="Un par ligne : code exact (52.10B) ou division (10 = toute l'industrie agroalimentaire).")
     departements = models.CharField("Départements", max_length=400, blank=True, help_text="Séparés par des virgules. Vide = France entière.")
@@ -568,6 +569,9 @@ class RechercheAuto(models.Model):
     effectif_max = models.PositiveIntegerField("Effectif maximum", default=0, help_text="0 = sans limite. Ex. 2000 pour écarter les très grands groupes.")
     etablissements_min = models.PositiveIntegerField("Établissements minimum", default=1, help_text="2 ou plus pour viser les réseaux multi-sites.")
     segment = models.CharField(max_length=20, choices=regles.SEGMENT_CHOICES, blank=True, help_text="Vide = déduit du code NAF.")
+    mots_cles = models.CharField("Mots-clés (France Travail)", max_length=255, blank=True,
+                                 help_text="Séparés par des virgules, ex. QSE, HSE, responsable sécurité. Vide = recrutements en nombre par secteur.")
+    seuil_offres = models.PositiveSmallIntegerField("Offres min. par entreprise", default=10, help_text="Pour les recrutements en nombre (France Travail).")
     palier_min = models.CharField("Adéquation minimale", max_length=1, default="B",
                                   choices=[("A", "Forte (80 et plus)"), ("B", "Bonne (65 et plus)"), ("C", "Toutes")])
     max_par_nuit = models.PositiveSmallIntegerField("Nouveaux prospects max. par nuit", default=15)
