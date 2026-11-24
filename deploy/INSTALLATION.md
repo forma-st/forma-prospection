@@ -146,3 +146,24 @@ Le bouton « Chercher les coordonnées » d'une fiche, et chaque matin les 30 me
 3. en option, Google Places pour le standard quand le site n'en donne pas : renseignez `GOOGLE_PLACES_API_KEY=` dans le `.env` (clé de l'API « Places API (New) » sur la console Google Cloud ; un quota gratuit mensuel couvre largement 30 recherches par jour).
 
 Seules des coordonnées génériques sont prises sur le web : jamais d'e-mail nominatif. Rien de ce qui est déjà saisi n'est écrasé. Pour lancer à la main : `.venv/bin/python manage.py prospection_coordonnees --max 30`, ou `--id 12` pour une fiche.
+
+## Partager avec un collègue par Tailscale
+
+Tailscale relie vos machines dans un réseau privé : l'outil n'est jamais exposé sur Internet.
+
+**Cas 1 : l'outil reste sur votre Mac.** Sur le Mac, Tailscale connecté :
+
+    cd ~/outil-prospection && bash deploy/partager_tailscale.sh
+
+Le script autorise les adresses Tailscale du Mac, active l'adresse sécurisée `https://<nom-du-mac>.<réseau>.ts.net/` (`tailscale serve`), redémarre l'outil et affiche l'adresse à donner. Si l'HTTPS n'est pas activé dans la console Tailscale (DNS > MagicDNS et HTTPS Certificates), l'adresse `http://100.x.x.x:8010/` fonctionne en attendant. Limite : l'outil n'est joignable que quand le Mac est allumé.
+
+**Cas 2 : l'outil passe sur le serveur Tailscale (toujours allumé, conseillé à deux).**
+
+1. Sur le serveur (Linux) : `git clone https://github.com/forma-st/forma-prospection.git ~/outil-prospection && cd ~/outil-prospection && bash deploy/installer.sh --demarrage-auto`
+2. Sur le Mac : arrêtez l'outil, faites une sauvegarde (`bash deploy/sauvegarder.sh`), puis copiez la base et les réglages :
+   `scp db.sqlite3 .env <serveur>:outil-prospection/` (la commande `scp` passe par Tailscale).
+3. Sur le serveur : `bash deploy/mettre_a_jour.sh` puis `bash deploy/partager_tailscale.sh`.
+4. Sur le Mac, désactivez le démarrage automatique local pour éviter deux bases différentes :
+   `launchctl bootout gui/$(id -u)/fr.formast.prospection` (et de même pour `.matin` et `.envois`).
+
+**Pour le collègue :** invitez-le dans le réseau Tailscale (console > Users > Invite, ou partage de la seule machine avec « Share »), créez son compte dans *Réglages > Utilisateurs*, et donnez-lui l'adresse affichée. Chacun voit ses propres tâches et actions du jour ; les prospects sont communs.
