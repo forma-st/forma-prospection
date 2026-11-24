@@ -166,4 +166,4 @@ Le script autorise les adresses Tailscale du Mac, active l'adresse sécurisée `
 4. Sur le Mac, désactivez le démarrage automatique local pour éviter deux bases différentes :
    `launchctl bootout gui/$(id -u)/fr.formast.prospection` (et de même pour `.matin` et `.envois`).
 
-**Pour le collègue :** invitez-le dans le réseau Tailscale (console > Users > Invite, ou partage de la seule machine avec « Share »), créez son compte dans *Réglages > Utilisateurs*, et donnez-lui l'adresse affichée. Chacun voit ses propres tâches et actions du jour ; les prospects sont communs.
+**Pour le collègue :** invitez-le dans le réseau Tailscale (console > Users > Invite, ou partage de la seule machine avec « Share »), créez son compte dans *Réglages > Utilisateurs*, et donnez-lui l'adresse affichée. Les prospects, tâches et messages sont communs : vous travaillez sur la même base.
