@@ -103,3 +103,12 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "loggers": {"prospection": {"handlers": ["console"], "level": "INFO"}},
 }
+
+# Erreurs serveur toujours écrites dans logs/serveur.log (sinon invisibles quand DEBUG est désactivé)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}
