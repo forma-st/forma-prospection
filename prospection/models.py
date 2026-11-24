@@ -102,6 +102,8 @@ class Compte(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
     site_web = models.URLField(blank=True)
+    adresse = models.CharField("Adresse du siège", max_length=255, blank=True)
+    coordonnees_le = models.DateTimeField("Coordonnées recherchées le", null=True, blank=True)
     idcc = models.CharField("IDCC", max_length=20, blank=True)
     opco = models.CharField("OPCO", max_length=60, blank=True)
     icpe = models.BooleanField("Site ICPE", default=False)

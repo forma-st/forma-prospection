@@ -212,7 +212,7 @@ def compte_action(request, pk):
         Activite.objects.create(compte=c, type="statut", texte=f"Statut → {c.statut}", utilisateur=u)
         messages.success(request, f"Statut : {c.statut}.")
     elif a == "modifier":
-        for champ in ("siren", "code_postal", "ville", "naf", "opco", "site_web", "linkedin_url"):
+        for champ in ("siren", "code_postal", "ville", "adresse", "naf", "opco", "site_web", "linkedin_url"):
             if champ in request.POST:
                 setattr(c, champ, request.POST[champ].strip())
         c.siren = re.sub(r"\D", "", c.siren)[:9]
@@ -228,6 +228,16 @@ def compte_action(request, pk):
     elif a == "sirene":
         ok, msg = sirene.rapprocher(c, u)
         (messages.success if ok else messages.warning)(request, msg)
+    elif a == "coordonnees":
+        from .services import coordonnees
+        try:
+            trouve = coordonnees.enrichir(c, u)
+            if trouve:
+                messages.success(request, "Trouvé : " + " ; ".join(trouve) + ".")
+            else:
+                messages.warning(request, "Rien de nouveau. Pas de site vérifiable ni de téléphone public trouvés : complétez à la main si besoin.")
+        except Exception as e:  # réseau
+            messages.warning(request, f"Recherche interrompue ({e.__class__.__name__}). Réessayez plus tard.")
     elif a == "contact":
         nom = request.POST.get("nom", "").strip()
         if not nom:

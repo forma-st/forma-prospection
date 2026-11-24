@@ -2,7 +2,8 @@
 {% block titre %}{{ c.nom }}{% endblock %}
 {% block contenu %}
 <div class="top"><div class="t"><h1>{{ c.nom }}</h1>
-  <div class="sub">{{ c.ville|default:"Ville ?" }}{% if c.departement %} ({{ c.departement }}){% endif %} · SIREN {{ c.siren|default:"à rapprocher" }} · NAF {{ c.naf|default:"?" }} · {{ c.segment|segment_libelle }} · source : {{ c.source|default:"saisie" }}</div></div>
+  <div class="sub">{{ c.ville|default:"Ville ?" }}{% if c.departement %} ({{ c.departement }}){% endif %} · SIREN {{ c.siren|default:"à rapprocher" }} · NAF {{ c.naf|default:"?" }} · {{ c.segment|segment_libelle }} · source : {{ c.source|default:"saisie" }}</div>
+  {% if c.adresse or c.site_web %}<div class="sub">{% if c.adresse %}{{ c.adresse }}{% endif %}{% if c.adresse and c.site_web %} · {% endif %}{% if c.site_web %}<a href="{{ c.site_web }}" target="_blank" rel="noopener">{{ c.site_web }}</a>{% endif %}</div>{% endif %}</div>
   <div class="row"><a class="btn ghost" href="{% url 'prospection:prospects' %}">← Liste</a>
     <div class="seg-ctl">{% if precedent %}<a href="{% url 'prospection:compte' precedent %}" data-nav="k" title="Précédente (K)">‹</a>{% else %}<span>‹</span>{% endif %}<span>{{ position }} / {{ total }}</span>{% if suivant %}<a href="{% url 'prospection:compte' suivant %}" data-nav="j" title="Suivante (J)">›</a>{% else %}<span>›</span>{% endif %}</div></div>
 </div>
@@ -13,6 +14,7 @@
       <select name="statut" aria-label="Statut" onchange="this.form.submit()">{% for s in statuts %}<option {% if s == c.statut %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></div>
   <div class="row">
     <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}<button class="btn sm sec" name="action" value="sirene">Compléter depuis l'annuaire</button></form>
+    <form method="post" action="{% url 'prospection:compte_action' c.pk %}">{% csrf_token %}<button class="btn sm sec" name="action" value="coordonnees" title="Adresse, standard, e-mail générique, site web et dirigeants">Chercher les coordonnées</button></form>
     <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="tache">
       <select name="type" aria-label="Type de tâche"><option value="appel">Appel</option><option value="email">E-mail</option>{% if linkedin_actif %}<option value="linkedin">LinkedIn</option>{% endif %}<option value="qualifier">Qualification</option></select>
       <input type="date" name="echeance" aria-label="Échéance"><button class="btn sm sec">Créer une tâche</button></form>
@@ -144,10 +146,11 @@
       <div class="row"><label class="f">Effectif<input type="number" name="effectif" value="{{ c.effectif }}" min="0" style="width:90px"></label><label class="f">Établissements<input type="number" name="nb_etablissements" value="{{ c.nb_etablissements }}" min="1" style="width:90px"></label>
         <label class="f">Code postal<input type="text" name="code_postal" value="{{ c.code_postal }}" maxlength="5" style="width:80px"></label><label class="f">Ville<input type="text" name="ville" value="{{ c.ville }}"></label></div>
       <div class="row"><label class="f">OPCO<input type="text" name="opco" value="{{ c.opco }}"></label><label class="f" style="flex:1">Site web<input type="url" name="site_web" value="{{ c.site_web }}"></label></div>
+      <label class="f">Adresse du siège<input type="text" name="adresse" value="{{ c.adresse }}" maxlength="255"></label>
       {% if linkedin_actif %}<label class="f">Page LinkedIn de l'entreprise<input type="url" name="linkedin_url" value="{{ c.linkedin_url }}"></label>{% endif %}
       <div class="row small"><label class="row"><input type="checkbox" name="icpe" {% if c.icpe %}checked{% endif %}> Site ICPE</label><label class="row"><input type="checkbox" name="erp" {% if c.erp %}checked{% endif %}> ERP</label><label class="row"><input type="checkbox" name="est_client" {% if c.est_client %}checked{% endif %}> Déjà client</label></div>
       <button class="btn sm sec" style="justify-self:start">Enregistrer et recalculer</button></form>
-    <p class="small muted" style="margin:8px 0 0">{% if c.sirene_le %}Annuaire : {{ c.sirene_le|date:"d/m/Y" }} (confiance {{ c.sirene_confiance }} %){% else %}Pas encore rapproché avec l'annuaire{% endif %} · IDCC {{ c.idcc|default:"?" }} · base légale : intérêt légitime B2B</p>
+    <p class="small muted" style="margin:8px 0 0">{% if c.sirene_le %}Annuaire : {{ c.sirene_le|date:"d/m/Y" }} (confiance {{ c.sirene_confiance }} %){% else %}Pas encore rapproché avec l'annuaire{% endif %}{% if c.coordonnees_le %} · coordonnées cherchées le {{ c.coordonnees_le|date:"d/m/Y" }}{% endif %} · IDCC {{ c.idcc|default:"?" }} · base légale : intérêt légitime B2B</p>
     <div class="row" style="margin-top:8px">
       <form method="post" action="{% url 'prospection:compte_action' c.pk %}" class="row">{% csrf_token %}<input type="hidden" name="action" value="ecarter"><input type="text" name="motif" placeholder="Motif" style="width:140px"><button class="btn sm ghost">Écarter</button></form>
       <form method="post" action="{% url 'prospection:compte_action' c.pk %}" onsubmit="return confirm('Enregistrer une opposition pour tous les contacts de ce prospect ?')">{% csrf_token %}<button class="btn sm ghost" name="action" value="opposer">Marquer opposé</button></form>

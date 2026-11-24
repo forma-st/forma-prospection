@@ -136,3 +136,13 @@ Le menu *Réglages > Coûts IA* affiche la dépense du mois (estimée d'après l
 Avec les mêmes identifiants France Travail, la source « La Bonne Boîte » trouve les entreprises qui devraient recruter dans les 6 mois sur un métier donné (codes ROME). Votre application doit être abonnée à l'API « La Bonne Boîte v2 ». Trois recherches sont livrées : logistique, industrie, santé et médico-social. En France entière, elles parcourent huit départements par nuit.
 
 Pour vérifier les droits de l'application : `.venv/bin/python manage.py prospection_diagnostic_ft`. Une recherche « offres d'emploi » dont l'API n'est pas accessible se désactive d'elle-même, avec l'explication dans le journal.
+
+## Coordonnées des prospects
+
+Le bouton « Chercher les coordonnées » d'une fiche, et chaque matin les 30 meilleurs prospects sans standard, passent par :
+
+1. l'annuaire officiel : adresse du siège, président, directeur général ou gérant (données publiques du registre) ;
+2. le site de l'entreprise (celui de la fiche, le domaine des e-mails connus, ou un domaine deviné et retenu seulement si le site cite le SIREN ou le nom) : téléphone du standard et e-mail générique (contact@, accueil@…) sur l'accueil, la page contact et les mentions légales ;
+3. en option, Google Places pour le standard quand le site n'en donne pas : renseignez `GOOGLE_PLACES_API_KEY=` dans le `.env` (clé de l'API « Places API (New) » sur la console Google Cloud ; un quota gratuit mensuel couvre largement 30 recherches par jour).
+
+Seules des coordonnées génériques sont prises sur le web : jamais d'e-mail nominatif. Rien de ce qui est déjà saisi n'est écrasé. Pour lancer à la main : `.venv/bin/python manage.py prospection_coordonnees --max 30`, ou `--id 12` pour une fiche.

@@ -926,3 +926,105 @@ class LaBonneBoite(TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(H.portee, "api_labonneboitev2 search office")
         self.assertTrue(H.url.endswith("/labonneboite/v2/recherche"))
+
+
+# ------------------------------------------------------------------ Coordonnées
+
+from .services import coordonnees  # noqa: E402
+
+PAGE_ACCUEIL = """<html><head><title>Entrepôts du Nord – logistique</title></head><body>
+<a href="/contact">Contact</a> <a href="/mentions-legales">Mentions légales</a> <a href="https://autre-site.fr/contact">x</a></body></html>"""
+PAGE_CONTACT = """<html><body><p>Standard : 01.30.12.34.56 – Portable 06 11 22 33 44</p>
+<a href="mailto:contact@entrepotsdunord.fr">Écrire</a> jean.dupont@entrepotsdunord.fr <img src="logo@2x.png"></body></html>"""
+PAGE_MENTIONS = "<html><body>SAS au capital de 10 000 €, RCS Pontoise 111 111 118</body></html>"
+
+
+class FauxWeb:
+    def __init__(self, pages, places=None):
+        self.pages, self.places, self.urls = pages, places, []
+
+    def get(self, url, **kw):
+        self.urls.append(url)
+        for cle, html in self.pages.items():
+            if url.rstrip("/") == cle.rstrip("/"):
+                return SimpleNamespace(status_code=200, text=html, url=url, headers={"content-type": "text/html"})
+        raise coordonnees.httpx.ConnectError("injoignable")
+
+    def post(self, url, **kw):
+        self.post_kw = kw
+        return SimpleNamespace(status_code=200, json=lambda: {"places": [self.places]} if self.places else {}, text="")
+
+
+SIRENE_NORD = {"results": [{**entreprise("111111118", "ENTREPOTS DU NORD"), "dirigeants": [
+    {"nom": "MARTIN", "prenoms": "SOPHIE ANNE", "qualite": "Président", "type_dirigeant": "personne physique", "date_de_naissance": "1970-01"},
+    {"nom": "DURAND", "prenoms": "LUC", "qualite": "Administrateur", "type_dirigeant": "personne physique"},
+    {"nom": "HOLDING X", "qualite": "Président", "type_dirigeant": "personne morale"}]}]}
+SIRENE_NORD["results"][0]["siege"]["adresse"] = "12 RUE DES ENTREPOTS 95000 CERGY"
+
+
+class Coordonnees(TestCase):
+    def setUp(self):
+        self.c = Compte.objects.create(nom="Entrepôts du Nord SAS", siren="111111118", code_postal="95000", ville="Cergy", effectif=180)
+        self.web = FauxWeb({"https://www.entrepotsdunord.fr/": PAGE_ACCUEIL, "https://www.entrepotsdunord.fr/contact": PAGE_CONTACT,
+                            "https://www.entrepotsdunord.fr/mentions-legales": PAGE_MENTIONS})
+
+    def _enrichir(self, web=None):
+        with mock.patch.object(coordonnees, "get_json", return_value=SIRENE_NORD), mock.patch.object(coordonnees.time, "sleep"):
+            return coordonnees.enrichir(self.c, client=web or self.web)
+
+    def test_extraction(self):
+        tels, mails = coordonnees.extraire(PAGE_CONTACT, "entrepotsdunord.fr")
+        self.assertEqual(tels, ["01 30 12 34 56", "06 11 22 33 44"])  # fixe d'abord
+        self.assertEqual(mails, ["contact@entrepotsdunord.fr"])  # jamais l'e-mail nominatif
+        self.assertEqual(coordonnees.format_tel("+33 (0)1 30 12 34 56"), "01 30 12 34 56")
+
+    def test_domaines_candidats(self):
+        Contact.objects.create(compte=self.c, nom="X", email="x@nord-logistique.com")
+        Contact.objects.create(compte=self.c, nom="Y", email="y@gmail.com")
+        self.assertEqual(coordonnees.domaines_candidats(self.c)[:3], ["nord-logistique.com", "entrepotsdunord.fr", "entrepotsdunord.com"])
+
+    def test_enrichissement_complet(self):
+        trouve = self._enrichir()
+        self.c.refresh_from_db()
+        self.assertEqual(self.c.adresse, "12 Rue Des Entrepots 95000 Cergy")
+        self.assertEqual(self.c.site_web, "https://www.entrepotsdunord.fr/")
+        std = self.c.contacts.get(role="standard")
+        self.assertEqual((std.telephone, std.email, std.statut_email), ("01 30 12 34 56", "contact@entrepotsdunord.fr", "probable"))
+        dirigeants = self.c.contacts.exclude(role="standard")
+        self.assertEqual([(k.prenom, k.nom, k.fonction) for k in dirigeants], [("Sophie", "Martin", "Président")])  # ni administrateur ni holding
+        self.assertTrue(self.c.coordonnees_le)
+        self.assertEqual(len(trouve), 5)
+        self.assertEqual(self._enrichir(), [])  # rien en double, rien d'écrasé
+
+    def test_site_non_verifie_ignore(self):
+        web = FauxWeb({"https://www.entrepotsdunord.fr/": "<html><head><title>Autre société</title></head><body>01 23 45 67 89</body></html>"})
+        self._enrichir(web)
+        self.assertEqual(self.c.site_web, "")
+        self.assertFalse(self.c.contacts.filter(role="standard").exists())
+
+    def test_email_oppose_non_repris(self):
+        rgpd.enregistrer_opposition("contact@entrepotsdunord.fr", source="test")
+        self._enrichir()
+        self.assertEqual(self.c.contacts.get(role="standard").email, "")
+
+    def test_google_places_facultatif(self):
+        web = FauxWeb({}, places={"displayName": {"text": "Entrepôts du Nord"}, "nationalPhoneNumber": "01 39 00 00 00",
+                                  "formattedAddress": "12 Rue des Entrepôts, 95000 Cergy", "websiteUri": ""})
+        self._enrichir(web)
+        self.assertFalse(self.c.contacts.filter(role="standard").exists())  # sans clé : pas d'appel
+        with mock.patch.dict("os.environ", {"GOOGLE_PLACES_API_KEY": "cle"}):
+            self._enrichir(web)
+        self.assertEqual(self.c.contacts.get(role="standard").telephone, "01 39 00 00 00")
+        self.assertEqual(web.post_kw["headers"]["X-Goog-Api-Key"], "cle")
+
+    def test_lot_et_bouton(self):
+        with mock.patch.object(coordonnees, "_client", return_value=self.web), mock.patch.object(coordonnees, "get_json", return_value=SIRENE_NORD), \
+                mock.patch.object(coordonnees.time, "sleep"):
+            self.assertEqual(coordonnees.enrichir_lot(5)["completes"], 1)
+            self.assertEqual(coordonnees.enrichir_lot(5)["examines"], 0)  # déjà fait
+            u = User.objects.create_user("julie", password="x", is_staff=True)
+            self.client.force_login(u)
+            Compte.objects.filter(pk=self.c.pk).update(coordonnees_le=None)
+            r = self.client.post(f"/prospection/compte/{self.c.pk}/action/", {"action": "coordonnees"}, follow=True)
+        self.assertContains(r, "Rien de nouveau")
+        self.assertContains(r, "12 Rue Des Entrepots")

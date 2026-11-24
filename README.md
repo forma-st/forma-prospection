@@ -100,6 +100,7 @@ prospection/
     sirene.py           annuaire officiel des entreprises (API publique gratuite)
     redaction.py        modèles intégrés et IA (facultative)
     couts_ia.py         coûts de l'IA : suivi, budget, simulateur
+    coordonnees.py      adresse, standard, e-mail générique, site et dirigeants
     qualite.py          contrôle avant envoi
     journee.py          « Ma journée »
     rgpd.py             opposition, mention d'information
